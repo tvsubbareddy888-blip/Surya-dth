@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "^21.0.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "axios": "^1.6.0"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   }
 }
