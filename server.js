@@ -51,7 +51,7 @@ app.post('/create-link', async (req, res) => {
       },
       link_meta: {
         notify_url: 'https://surya-dth.onrender.com/webhook/cashfree',
-        return_url: 'https://lucky-swan-e72bbe.netlify.app/payment.html?status=success&vc=' + vc
+        return_url: 'https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html?status=success&vc=' + vc
       },
       link_notes: {
         vc_number: vc,
