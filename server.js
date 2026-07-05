@@ -6,7 +6,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
@@ -201,6 +201,77 @@ async function triggerRecharge(vc, amount, orderId, operator) {
 
   return { success: botData.success, message: botData.message };
 }
+
+
+// ── FIRESTORE PROXY (Auto Renew) ──
+const FS_PROJECT = 'surya-dth-crm';
+const FS_KEY = 'AIzaSyDJ83sgOZbJCEDYhGCpvlCNdh2-TWAyq-4';
+const FS_BASE = `https://firestore.googleapis.com/v1/projects/${FS_PROJECT}/databases/(default)/documents`;
+
+// GET all auto-renew customers
+app.get('/autorenew', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const r = await fetch(`${FS_BASE}/auto-renew-customers?key=${FS_KEY}&pageSize=1000`);
+    const data = await r.json();
+    const vcs = [];
+    if (data.documents) {
+      data.documents.forEach(doc => {
+        const vc = doc.fields?.vc?.stringValue;
+        const name = doc.fields?.name?.stringValue || '';
+        const renewal = doc.fields?.renewal?.stringValue || '';
+        const company = doc.fields?.company?.stringValue || '';
+        const mobile = doc.fields?.mobile?.stringValue || '';
+        if (vc) vcs.push({ vc, name, renewal, company, mobile });
+      });
+    }
+    res.json({ success: true, customers: vcs });
+  } catch (e) {
+    console.log('Firestore GET error:', e.message);
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// POST - add/update auto-renew customer
+app.post('/autorenew', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { vc, name, mobile, company, renewal } = req.body;
+    if (!vc) return res.status(400).json({ error: 'VC required' });
+    const docId = 'vc_' + vc;
+    const r = await fetch(`${FS_BASE}/auto-renew-customers/${docId}?key=${FS_KEY}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: {
+        vc: { stringValue: vc },
+        name: { stringValue: name || '' },
+        mobile: { stringValue: mobile || '' },
+        company: { stringValue: company || '' },
+        renewal: { stringValue: renewal || '' },
+        addedAt: { stringValue: new Date().toISOString() }
+      }})
+    });
+    const data = await r.json();
+    res.json({ success: true, data });
+  } catch (e) {
+    console.log('Firestore POST error:', e.message);
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// DELETE - remove auto-renew customer
+app.delete('/autorenew/:vc', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const vc = req.params.vc;
+    const docId = 'vc_' + vc;
+    await fetch(`${FS_BASE}/auto-renew-customers/${docId}?key=${FS_KEY}`, { method: 'DELETE' });
+    res.json({ success: true });
+  } catch (e) {
+    console.log('Firestore DELETE error:', e.message);
+    res.json({ success: false, error: e.message });
+  }
+});
 
 app.listen(PORT, () => {
   console.log('Surya DTH Server running on port ' + PORT);
