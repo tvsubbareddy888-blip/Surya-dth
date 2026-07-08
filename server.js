@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
@@ -426,27 +426,34 @@ app.delete('/autorenew/all', async (req, res) => {
   }
 });
 
-// GET all auto-renew customers
+// GET all auto-renew customers (with pagination)
 app.get('/autorenew', async (req, res) => {
   try {
     const fetch = require('node-fetch');
-    const r = await fetch(`${FS_BASE}/auto-renew-customers?key=${FS_KEY}&pageSize=1000`);
-    const data = await r.json();
+    let allDocs = [];
+    let nextPage = null;
+    do {
+      const url = `${FS_BASE}/auto-renew-customers?key=${FS_KEY}&pageSize=300${nextPage ? '&pageToken=' + nextPage : ''}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      if (data.documents) allDocs = allDocs.concat(data.documents);
+      nextPage = data.nextPageToken || null;
+    } while (nextPage);
+
     const vcs = [];
-    if (data.documents) {
-      data.documents.forEach(doc => {
-        const vc = doc.fields?.vc?.stringValue;
-        const name = doc.fields?.name?.stringValue || '';
-        const renewal = doc.fields?.renewal?.stringValue || '';
-        const company = doc.fields?.company?.stringValue || '';
-        const mobile = doc.fields?.mobile?.stringValue || '';
-        if (vc) vcs.push({ 
-          vc, name, renewal, company, mobile,
-          lastRecharged: doc.fields?.lastRecharged?.stringValue || '',
-          lastRenewalDate: doc.fields?.lastRenewalDate?.stringValue || ''
-        });
+    allDocs.forEach(doc => {
+      const vc = doc.fields?.vc?.stringValue;
+      const name = doc.fields?.name?.stringValue || '';
+      const renewal = doc.fields?.renewal?.stringValue || '';
+      const company = doc.fields?.company?.stringValue || '';
+      const mobile = doc.fields?.mobile?.stringValue || '';
+      if (vc) vcs.push({ 
+        vc, name, renewal, company, mobile,
+        lastRecharged: doc.fields?.lastRecharged?.stringValue || '',
+        lastRenewalDate: doc.fields?.lastRenewalDate?.stringValue || ''
       });
-    }
+    });
+    console.log(`Auto Renew GET: ${vcs.length} customers`);
     res.json({ success: true, customers: vcs });
   } catch (e) {
     console.log('Firestore GET error:', e.message);
