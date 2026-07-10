@@ -513,6 +513,7 @@ td{padding:7px 9px;white-space:nowrap;}
   <button class="fbtn" onclick="openEPSettings()" style="background:rgba(59,130,246,.15);color:var(--accent2);border-color:rgba(59,130,246,.3)" id="epSettingsBtn">🔑 EP Login</button>
   <button class="fbtn" onclick="sendBulkWA()" style="background:rgba(37,211,102,.1);color:var(--wa);border-color:rgba(37,211,102,.3)">📲 WA</button>
   <button class="fbtn" onclick="openSmsModal()" style="background:rgba(59,130,246,.1);color:var(--accent2);border-color:rgba(59,130,246,.3)">📱 SMS</button>
+  <button class="fbtn" onclick="startPackSync()" style="background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 Pack Sync</button>
 </div>
 
 <!-- TABLE desktop -->
@@ -585,6 +586,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th onclick="srt('company')">Co ↕</th>
           <th onclick="srt('village')">Village ↕</th>
           <th onclick="srt('pack')">Pack ↕</th>
+          <th onclick="srt('systemPack')">System Pack ↕</th>
           <th onclick="srt('cost')">Amount ↕</th>
           <th>WA</th>
         </tr>
@@ -2778,6 +2780,7 @@ function renderDesktopTable(){
 <td><span class="${coCls}">${d.company||'-'}</span></td>
 <td style="font-size:12px">${d.village||'-'}</td>
 <td class="pack" title="${d.pack}">${d.pack||'-'}</td>
+<td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}</td>
 <td class="amt">${d.cost?'₹'+d.cost:'-'}</td>
 <td style="display:flex;gap:4px;">${mob?`<button class="twa" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 WA</button>`:''}<button class="twa" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);font-size:10px;" onclick="openCustPctModal(filtered[${gi}])">%</button><button class="twa" style="background:rgba(245,158,11,.1);color:var(--accent);border-color:rgba(245,158,11,.25);" onclick="openQRModal(filtered[${gi}])">QR</button></td>
 </tr>`;
@@ -2882,9 +2885,73 @@ window.addEventListener('resize',()=>render());
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
+// ── PACK SYNC ──
+async function startPackSync(){
+  // Selected ఉంటే selected, లేకుంటే filtered అన్నీ
+  let list;
+  if(selectedVCs.size>0){
+    list=filtered.filter(d=>selectedVCs.has(d.vcKey));
+  } else {
+    list=filtered;
+  }
+  if(!list.length){showToast('Records లేవు!',true);return;}
+
+  const pin=prompt('🔒 Pack Sync PIN enter చేయండి:');
+  if(pin===null)return;
+  if(pin!=='103599'){showToast('❌ Wrong PIN!',true);return;}
+
+  const dish=[];const d2h=[];
+  list.forEach(d=>{
+    const vc=normVC(d.vc||'');
+    if(!vc)return;
+    if((d.company||'').toUpperCase().includes('D2H')) d2h.push(vc);
+    else dish.push(vc);
+  });
+
+  showToast(`⏳ Pack Sync starting... Dish: ${dish.length}, D2H: ${d2h.length}`,'info');
+
+  try{
+    const res=await fetch(`${AR_API}/packSync`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({dish,d2h})
+    });
+    const data=await res.json();
+    if(data.success){
+      showToast(`✅ Pack Sync started! VPS లో run అవుతుంది — కొద్దిసేపటికి System Pack update అవుతుంది`);
+    } else {
+      showToast('❌ Pack Sync failed: '+data.message,true);
+    }
+  }catch(e){
+    showToast('❌ Error: '+e.message,true);
+  }
+}
+
+// ── PACK DETAILS LOAD ──
+async function loadPackDetails(){
+  try{
+    const res=await fetch(`${AR_API}/packDetails`);
+    const data=await res.json();
+    if(data.packs&&data.packs.length){
+      data.packs.forEach(p=>{
+        const vc=normVC(p.vc||'');
+        if(!vc)return;
+        // merged లో update చేయి
+        const idx=merged.findIndex(d=>normVC(d.vc)===vc);
+        if(idx>=0) merged[idx].systemPack=p.systemPack||'';
+      });
+      applyAll();
+      console.log(`[PACK] ${data.packs.length} system packs loaded`);
+    }
+  }catch(e){
+    console.log('[PACK] Load error:',e);
+  }
+}
+
 checkURLParams();
 autoConnect();
 loadAutoRenew();
+loadPackDetails();
 // Auto Renew Firebase నుండి load చేయి
 window.addEventListener('load', ()=>{
   setTimeout(loadAutoRenew, 1000);
