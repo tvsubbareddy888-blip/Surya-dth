@@ -502,6 +502,92 @@ app.delete('/autorenew/:vc', async (req, res) => {
   }
 });
 
+// PACK SYNC — CRM నుండి VCs పంపి VPS bot trigger చేయి
+app.post('/packSync', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { dish, d2h } = req.body;
+    console.log(`[PACK SYNC] Dish: ${(dish||[]).length}, D2H: ${(d2h||[]).length}`);
+    const botRes = await fetch(`${RECHARGE_BOT_URL}/packSync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dish: dish||[], d2h: d2h||[] })
+    });
+    const data = await botRes.json();
+    res.json(data);
+  } catch(e) {
+    console.log('[PACK SYNC ERROR]', e.message);
+    res.json({ success: false, message: e.message });
+  }
+});
+
+// PACK SYNC SAVE — VPS నుండి Firebase కి save చేయి
+app.post('/packSync/save', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { packs } = req.body;
+    console.log(`[PACK SYNC SAVE] ${(packs||[]).length} packs`);
+    let saved = 0;
+    for (const pack of (packs||[])) {
+      const vc = pack.vc || '';
+      if (!vc) continue;
+      const docId = 'vc_' + vc;
+      const doc = {
+        fields: {
+          vc: { stringValue: vc },
+          systemPack: { stringValue: pack.systemPack || '' },
+          operator: { stringValue: pack.operator || '' },
+          updatedAt: { stringValue: new Date().toISOString() }
+        }
+      };
+      try {
+        await fetch(`${FS_BASE}/pack-details/${docId}?key=${FS_KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doc)
+        });
+        saved++;
+      } catch(e) {
+        console.log(`[PACK SAVE] VC ${vc} error:`, e.message);
+      }
+    }
+    console.log(`[PACK SYNC SAVE] ${saved}/${(packs||[]).length} saved`);
+    res.json({ success: true, saved, total: (packs||[]).length });
+  } catch(e) {
+    console.log('[PACK SYNC SAVE ERROR]', e.message);
+    res.json({ success: false, message: e.message });
+  }
+});
+
+// PACK DETAILS GET — CRM లో System Pack చూపించడానికి
+app.get('/packDetails', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const allPacks = [];
+    let pageToken = '';
+    do {
+      const url = `${FS_BASE}/pack-details?key=${FS_KEY}&pageSize=300${pageToken ? '&pageToken=' + pageToken : ''}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      const docs = data.documents || [];
+      docs.forEach(doc => {
+        const f = doc.fields || {};
+        allPacks.push({
+          vc: f.vc?.stringValue || '',
+          systemPack: f.systemPack?.stringValue || '',
+          operator: f.operator?.stringValue || '',
+          updatedAt: f.updatedAt?.stringValue || ''
+        });
+      });
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+    res.json({ success: true, packs: allPacks });
+  } catch(e) {
+    console.log('[PACK DETAILS ERROR]', e.message);
+    res.json({ success: false, packs: [] });
+  }
+});
+
 app.listen(PORT, () => {
   console.log('Surya DTH Server running on port ' + PORT);
   console.log('Bot URL: ' + (RECHARGE_BOT_URL || 'NOT SET'));
