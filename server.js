@@ -594,30 +594,35 @@ app.post('/renewalSync/save', async (req, res) => {
     const fetch = require('node-fetch');
     const { renewals } = req.body;
     console.log(`[RENEWAL SYNC SAVE] ${(renewals||[]).length} renewal dates saving...`);
+    
+    // Batch గా 200 చొప్పున save చేయి
+    const batchSize = 200;
     let saved = 0;
-    for (const r of (renewals||[])) {
-      const vc = r.vc || '';
-      if (!vc) continue;
-      const docId = 'vc_' + vc;
-      const doc = {
-        fields: {
-          vc: { stringValue: vc },
-          renewal: { stringValue: r.renewal || '' },
-          operator: { stringValue: r.operator || '' },
-          updatedAt: { stringValue: new Date().toISOString() }
-        }
-      };
-      try {
-        await fetch(`${FS_BASE}/renewal-dates/${docId}?key=${FS_KEY}`, {
+    
+    for (let i = 0; i < (renewals||[]).length; i += batchSize) {
+      const batch = renewals.slice(i, i + batchSize);
+      const promises = batch.map(r => {
+        const vc = r.vc || '';
+        if (!vc) return Promise.resolve();
+        const docId = 'vc_' + vc;
+        const doc = {
+          fields: {
+            vc: { stringValue: vc },
+            renewal: { stringValue: r.renewal || '' },
+            operator: { stringValue: r.operator || '' },
+            updatedAt: { stringValue: new Date().toISOString() }
+          }
+        };
+        return fetch(`${FS_BASE}/renewal-dates/${docId}?key=${FS_KEY}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(doc)
-        });
-        saved++;
-      } catch(e) {
-        console.log(`[RENEWAL SAVE] VC ${vc} error:`, e.message);
-      }
+        }).then(() => { saved++; }).catch(e => console.log(`VC ${vc} error:`, e.message));
+      });
+      await Promise.all(promises);
+      console.log(`[RENEWAL SYNC SAVE] Batch ${Math.floor(i/batchSize)+1}: ${saved} saved so far`);
     }
+    
     console.log(`[RENEWAL SYNC SAVE] ${saved}/${(renewals||[]).length} saved`);
     res.json({ success: true, saved, total: (renewals||[]).length });
   } catch(e) {
