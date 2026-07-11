@@ -945,7 +945,11 @@ async function markSelectedAutoRenew(enable){
     name: d.name||'',
     mobile: d.mobile||'',
     company: d.company||'',
-    renewal:(()=>{const wb=dishWeb[d.vcKey]||d2hWeb[d.vcKey];return (wb&&wb.renewalRaw)||d.renewalRaw||d.renewal||'';})()
+    renewal:(()=>{
+      const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
+      const wb=dishWeb[d.vcKey]||d2hWeb[d.vcKey];
+      return fbRenewal||(wb&&wb.renewalRaw)||d.renewalRaw||d.renewal||'';
+    })()
   }));
   try{
     const res = await fetch(`${AR_API}/autorenew/batch`,{
@@ -989,12 +993,15 @@ async function bulkUploadVCText(){
     const vk = vcKey(normalVc);
     const wb = dishWeb[vk]||d2hWeb[vk];
     const d = myData.find(x=>x.vcKey===vk)||{};
+    // Firebase renewal date ముందు వాడు, తర్వాత web data
+    const fbRenewal = firebaseRenewals[normalVc] || '';
+    const renewal = fbRenewal || (wb&&wb.renewalRaw) || d.renewalRaw || d.renewal || '';
     return {
       vc: normalVc,
       name: d.name||wb?.webName||'',
       mobile: d.mobile||'',
       company: d.company||(wb?.source==='dish'?'DISH TV':'D2H')||'',
-      renewal: (wb&&wb.renewalRaw)||d.renewalRaw||d.renewal||''
+      renewal: renewal
     };
   }).filter(c=>c.vc);
 
