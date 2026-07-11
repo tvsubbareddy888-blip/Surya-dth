@@ -2396,13 +2396,17 @@ function mergeSync(){
     let company=d.company||'';
     if(webDish) company='DISH TV';
     else if(webD2H) company='D2H';
+    // Firebase renewal date వాడు (Excel/Web కంటే accurate)
+    const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
+    const renewal = fbRenewal || (web?web.renewal:'');
+    const renewalRaw = fbRenewal || (web?web.renewalRaw:'');
     return{...d,
       company:company,
       status:web?web.status:'',
       webName:web?web.webName:'',
       stb:web?web.stb:'',
-      renewal:web?web.renewal:'',
-      renewalRaw:web?web.renewalRaw:'',
+      renewal:renewal,
+      renewalRaw:renewalRaw,
       synced:!!web,
       webSource:web?web.source:''
     };
@@ -2948,10 +2952,41 @@ async function loadPackDetails(){
   }
 }
 
+// ── RENEWAL DATES FROM FIREBASE ──
+let firebaseRenewals = {}; // vc → renewal date
+
+async function loadRenewalDates(){
+  try{
+    const res = await fetch(`${AR_API}/renewalDates`);
+    const data = await res.json();
+    if(data.renewals && data.renewals.length){
+      firebaseRenewals = {};
+      data.renewals.forEach(r=>{
+        if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = r.renewal;
+      });
+      console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded from Firebase`);
+      // Merged data update చేయి
+      if(merged.length > 0){
+        merged.forEach(d=>{
+          const vc = normVC(d.vc);
+          if(firebaseRenewals[vc]){
+            d.renewal = firebaseRenewals[vc];
+            d.renewalRaw = firebaseRenewals[vc];
+          }
+        });
+        applyAll();
+      }
+    }
+  }catch(e){
+    console.log('[RENEWAL] Load error:', e);
+  }
+}
+
 checkURLParams();
 autoConnect();
 loadAutoRenew();
 loadPackDetails();
+loadRenewalDates();
 // Auto Renew Firebase నుండి load చేయి
 window.addEventListener('load', ()=>{
   setTimeout(loadAutoRenew, 1000);
