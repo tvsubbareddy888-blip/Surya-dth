@@ -588,6 +588,73 @@ app.get('/packDetails', async (req, res) => {
   }
 });
 
+// RENEWAL SYNC SAVE — VPS నుండి Firebase కి renewal dates save చేయి
+app.post('/renewalSync/save', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { renewals } = req.body;
+    console.log(`[RENEWAL SYNC SAVE] ${(renewals||[]).length} renewal dates saving...`);
+    let saved = 0;
+    for (const r of (renewals||[])) {
+      const vc = r.vc || '';
+      if (!vc) continue;
+      const docId = 'vc_' + vc;
+      const doc = {
+        fields: {
+          vc: { stringValue: vc },
+          renewal: { stringValue: r.renewal || '' },
+          operator: { stringValue: r.operator || '' },
+          updatedAt: { stringValue: new Date().toISOString() }
+        }
+      };
+      try {
+        await fetch(`${FS_BASE}/renewal-dates/${docId}?key=${FS_KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doc)
+        });
+        saved++;
+      } catch(e) {
+        console.log(`[RENEWAL SAVE] VC ${vc} error:`, e.message);
+      }
+    }
+    console.log(`[RENEWAL SYNC SAVE] ${saved}/${(renewals||[]).length} saved`);
+    res.json({ success: true, saved, total: (renewals||[]).length });
+  } catch(e) {
+    console.log('[RENEWAL SYNC SAVE ERROR]', e.message);
+    res.json({ success: false, message: e.message });
+  }
+});
+
+// RENEWAL DATES GET — CRM లో renewal dates చూపించడానికి
+app.get('/renewalDates', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const allRenewals = [];
+    let pageToken = '';
+    do {
+      const url = `${FS_BASE}/renewal-dates?key=${FS_KEY}&pageSize=300${pageToken ? '&pageToken=' + pageToken : ''}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      const docs = data.documents || [];
+      docs.forEach(doc => {
+        const f = doc.fields || {};
+        allRenewals.push({
+          vc: f.vc?.stringValue || '',
+          renewal: f.renewal?.stringValue || '',
+          operator: f.operator?.stringValue || '',
+          updatedAt: f.updatedAt?.stringValue || ''
+        });
+      });
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+    res.json({ success: true, renewals: allRenewals });
+  } catch(e) {
+    console.log('[RENEWAL DATES ERROR]', e.message);
+    res.json({ success: false, renewals: [] });
+  }
+});
+
 app.listen(PORT, () => {
   console.log('Surya DTH Server running on port ' + PORT);
   console.log('Bot URL: ' + (RECHARGE_BOT_URL || 'NOT SET'));
