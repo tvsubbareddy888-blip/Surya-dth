@@ -2400,6 +2400,11 @@ function mergeSync(){
     const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
     const renewal = fbRenewal || (web?web.renewal:'');
     const renewalRaw = fbRenewal || (web?web.renewalRaw:'');
+    const fbSystemPack = (() => {
+      // packDetails Map check
+      if(window._packDetails && window._packDetails[normVC(d.vc)]) return window._packDetails[normVC(d.vc)];
+      return '';
+    })();
     return{...d,
       company:company,
       status:web?web.status:'',
@@ -2407,6 +2412,7 @@ function mergeSync(){
       stb:web?web.stb:'',
       renewal:renewal,
       renewalRaw:renewalRaw,
+      systemPack:fbSystemPack||d.systemPack||'',
       synced:!!web,
       webSource:web?web.source:''
     };
@@ -2937,9 +2943,11 @@ async function loadPackDetails(){
     const res=await fetch(`${AR_API}/packDetails`);
     const data=await res.json();
     if(data.packs&&data.packs.length){
+      window._packDetails = {};
       data.packs.forEach(p=>{
         const vc=normVC(p.vc||'');
         if(!vc)return;
+        window._packDetails[vc] = p.systemPack||'';
         // merged లో update చేయి
         const idx=merged.findIndex(d=>normVC(d.vc)===vc);
         if(idx>=0) merged[idx].systemPack=p.systemPack||'';
