@@ -1358,7 +1358,7 @@ function buildWAMsg(d,type){
   const L='─────────────────';
   const hdr='🌟 *SURYA DTH* 🌟\n📡 Dish TV | D2H | Tata Play | Airtel | Sun Direct\n✅ Authorized Dealer\n'+L;
   const ftr=L+'\n📞 కాల్ చేయండి: *9963246388*\n'+L;
-  if(type==='renewal') return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH subscription renewal గురించి గుర్తు చేయడానికి contact చేస్తున్నాం.\n📅 Renewal Date: *'+renewal+'*\n⏰ '+daysStr+'\n⚠️ సమయానికి renew చేయకపోతే మీ TV చానెల్స్ బంద్ అయిపోతాయి. వీలైనంత త్వరగా renew చేయించుకోండి. 🙏\n\n'+ftr;
+  if(type==='renewal') return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH subscription renewal గురించి గుర్తు చేయడానికి contact చేస్తున్నాం.\n📅 Renewal Date: *'+renewal+'*\n⏰ '+daysStr+'\n⚠️ సమయానికి renew చేయకపోతే మీ TV చానెల్స్ బంద్ అయిపోతాయి. వీలైనంత త్వరగా renew చేయించుకోండి. 🙏\n\nమా కాంటాక్ట్ నెంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏\n\n'+ftr;
   if(type==='deactive'){
     const vc=normVC(d.vc||'');
     const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||localStorage.getItem('recharge_pct')||'70.8');
@@ -1374,7 +1374,7 @@ function buildWAMsg(d,type){
         +'&company='+encodeURIComponent(company);
       localStorage.setItem('paylink_'+vc, payLink);
     }
-    return 'నమస్కారం *'+name+'* గారు! 🙏\n\nమీ DISH Recharge అయిపోయింది, దీని వలన మీ TV channels ఆగిపోయాయి.\n\n📺 Channels మళ్ళీ start అవ్వాలంటే వీలైనంత త్వరగా Recharge చేయించుకోండి.\n\n💰 *Recharge Rates:*\n1 నెలకు       - Rs.250\n6 నెలలకు    - Rs.1500\n1 సంవత్సరం - Rs.3000\n\n💳 *ఇక్కడ Recharge చేయండి:*\n'+payLink+'\n\nమా నంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏';
+    return 'నమస్కారం *'+name+'* గారు! 🙏\n\nమీ DISH Recharge అయిపోయింది, దీని వలన మీ TV channels ఆగిపోయాయి.\n\n📺 Channels మళ్ళీ start అవ్వాలంటే వీలైనంత త్వరగా Recharge చేయించుకోండి.\n\n💰 *Recharge Rates:*\n1 నెలకు       - Rs.250\n6 నెలలకు    - Rs.1500\n1 సంవత్సరం - Rs.3000\n\nమా నంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏';
   }
   return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH గురించి contact చేస్తున్నాం. 🙏\n\n'+ftr;
 }
