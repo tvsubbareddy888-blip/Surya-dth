@@ -2996,6 +2996,22 @@ async function loadRenewalDates(){
     const now = Date.now();
     const TTL = 3 * 60 * 60 * 1000; // 3 గంటలు
 
+    // పాత format (string) detect చేసి clear చేయి
+    if(cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const firstVal = Object.values(parsed)[0];
+        if(typeof firstVal === 'string') {
+          localStorage.removeItem('surya_renewals');
+          localStorage.removeItem('surya_renewals_time');
+          console.log('[RENEWAL] Old format detected, cache cleared');
+        }
+      } catch(e) {
+        localStorage.removeItem('surya_renewals');
+        localStorage.removeItem('surya_renewals_time');
+      }
+    }
+
     if(cached && (now - cachedTime) < TTL){
       firebaseRenewals = JSON.parse(cached);
       console.log(`[RENEWAL] ${Object.keys(firebaseRenewals).length} renewal dates loaded from localStorage cache`);
