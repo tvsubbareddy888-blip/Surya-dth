@@ -502,6 +502,11 @@ app.delete('/autorenew/:vc', async (req, res) => {
   }
 });
 
+// PACK DETAILS CACHE
+let packCache = {};
+let packCacheTime = 0;
+const PACK_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 గంటలు
+
 // PACK SYNC — CRM నుండి VCs పంపి VPS bot trigger చేయి
 app.post('/packSync', async (req, res) => {
   try {
@@ -521,13 +526,21 @@ app.post('/packSync', async (req, res) => {
   }
 });
 
-// PACK SYNC SAVE — VPS నుండి Firebase కి save చేయి
+// PACK SYNC SAVE — VPS నుండి Firebase కి save చేయి + cache update
 app.post('/packSync/save', async (req, res) => {
   try {
     const fetch = require('node-fetch');
     const { packs } = req.body;
     console.log(`[PACK SYNC SAVE] ${(packs||[]).length} packs`);
     let saved = 0;
+    
+    // Cache update చేయి
+    (packs||[]).forEach(p => {
+      if(p.vc) packCache[p.vc] = p.systemPack || '';
+    });
+    packCacheTime = Date.now();
+    console.log(`[PACK SYNC SAVE] Cache updated: ${Object.keys(packCache).length} packs`);
+    
     for (const pack of (packs||[])) {
       const vc = pack.vc || '';
       if (!vc) continue;
@@ -559,28 +572,44 @@ app.post('/packSync/save', async (req, res) => {
   }
 });
 
-// PACK DETAILS GET — CRM లో System Pack చూపించడానికి
+// PACK DETAILS GET — CRM లో System Pack చూపించడానికి (cache వాడు)
 app.get('/packDetails', async (req, res) => {
   try {
     const fetch = require('node-fetch');
+    
+    // Cache valid అయితే return చేయి
+    if(Object.keys(packCache).length > 0) {
+      const packs = Object.entries(packCache).map(([vc, systemPack]) => ({
+        vc, systemPack, operator: '', updatedAt: ''
+      }));
+      console.log(`[PACK DETAILS] Serving from cache: ${packs.length} packs`);
+      return res.json({ success: true, packs });
+    }
+    
+    // Cache లేదు — Firebase నుండి load చేయి
     const allPacks = [];
     let pageToken = '';
     do {
       const url = `${FS_BASE}/pack-details?key=${FS_KEY}&pageSize=300${pageToken ? '&pageToken=' + pageToken : ''}`;
       const r = await fetch(url);
       const data = await r.json();
+      if(data.error) {
+        console.log('[PACK DETAILS] Firebase error:', data.error.message);
+        break;
+      }
       const docs = data.documents || [];
       docs.forEach(doc => {
         const f = doc.fields || {};
-        allPacks.push({
-          vc: f.vc?.stringValue || '',
-          systemPack: f.systemPack?.stringValue || '',
-          operator: f.operator?.stringValue || '',
-          updatedAt: f.updatedAt?.stringValue || ''
-        });
+        const vc = f.vc?.stringValue || '';
+        const systemPack = f.systemPack?.stringValue || '';
+        allPacks.push({ vc, systemPack, operator: f.operator?.stringValue || '', updatedAt: f.updatedAt?.stringValue || '' });
+        if(vc) packCache[vc] = systemPack;
       });
       pageToken = data.nextPageToken || '';
     } while (pageToken);
+    
+    packCacheTime = Date.now();
+    console.log(`[PACK DETAILS] Loaded ${allPacks.length} from Firebase`);
     res.json({ success: true, packs: allPacks });
   } catch(e) {
     console.log('[PACK DETAILS ERROR]', e.message);
