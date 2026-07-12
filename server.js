@@ -623,6 +623,18 @@ app.post('/renewalSync/save', async (req, res) => {
       console.log(`[RENEWAL SYNC SAVE] Batch ${Math.floor(i/batchSize)+1}: ${saved} saved so far`);
     }
     
+    // Cache update చేయి
+    if((renewals||[]).length > 0) {
+      renewalCache = renewals.map(r => ({
+        vc: r.vc || '',
+        renewal: r.renewal || '',
+        operator: r.operator || '',
+        updatedAt: new Date().toISOString()
+      }));
+      renewalCacheTime = Date.now();
+      console.log(`[RENEWAL SYNC SAVE] Cache updated: ${renewalCache.length} records`);
+    }
+    
     console.log(`[RENEWAL SYNC SAVE] ${saved}/${(renewals||[]).length} saved`);
     res.json({ success: true, saved, total: (renewals||[]).length });
   } catch(e) {
