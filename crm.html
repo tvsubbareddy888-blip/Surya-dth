@@ -2947,6 +2947,19 @@ async function startPackSync(){
 // ── PACK DETAILS LOAD ──
 async function loadPackDetails(){
   try{
+    // ముందు localStorage నుండి load చేయి
+    const cached = localStorage.getItem('surya_packs');
+    if(cached){
+      window._packDetails = JSON.parse(cached);
+      merged.forEach(d=>{
+        const vc=normVC(d.vc);
+        if(window._packDetails[vc]) d.systemPack=window._packDetails[vc];
+      });
+      applyAll();
+      console.log(`[PACK] ${Object.keys(window._packDetails).length} system packs loaded from localStorage`);
+    }
+    
+    // Render నుండి fresh load చేయి
     const res=await fetch(`${AR_API}/packDetails`);
     const data=await res.json();
     if(data.packs&&data.packs.length){
@@ -2955,12 +2968,13 @@ async function loadPackDetails(){
         const vc=normVC(p.vc||'');
         if(!vc)return;
         window._packDetails[vc] = p.systemPack||'';
-        // merged లో update చేయి
         const idx=merged.findIndex(d=>normVC(d.vc)===vc);
         if(idx>=0) merged[idx].systemPack=p.systemPack||'';
       });
+      // localStorage లో save చేయి
+      try{ localStorage.setItem('surya_packs', JSON.stringify(window._packDetails)); }catch(e){}
       applyAll();
-      console.log(`[PACK] ${data.packs.length} system packs loaded`);
+      console.log(`[PACK] ${data.packs.length} system packs loaded from Render`);
     }
   }catch(e){
     console.log('[PACK] Load error:',e);
