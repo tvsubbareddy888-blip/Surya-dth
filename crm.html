@@ -2405,8 +2405,10 @@ function mergeSync(){
     else if(webD2H) company='D2H';
     // Firebase renewal date వాడు (Excel/Web కంటే accurate)
     const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
-    const renewal = fbRenewal || (web?web.renewal:'');
-    const renewalRaw = fbRenewal || (web?web.renewalRaw:'');
+    const fbRenewalStr = typeof fbRenewal === 'object' ? fbRenewal.renewal : fbRenewal;
+    const fbStatus = typeof fbRenewal === 'object' ? fbRenewal.status : '';
+    const renewal = fbRenewalStr || (web?web.renewal:'');
+    const renewalRaw = fbRenewalStr || (web?web.renewalRaw:'');
     const fbSystemPack = (() => {
       // packDetails Map check
       if(window._packDetails && window._packDetails[normVC(d.vc)]) return window._packDetails[normVC(d.vc)];
@@ -2414,7 +2416,7 @@ function mergeSync(){
     })();
     return{...d,
       company:company,
-      status:web?web.status:'',
+      status:fbStatus||(web?web.status:'')||d.status||'',
       webName:web?web.webName:'',
       stb:web?web.stb:'',
       renewal:renewal,
@@ -2999,8 +3001,10 @@ async function loadRenewalDates(){
         merged.forEach(d=>{
           const vc = normVC(d.vc);
           if(firebaseRenewals[vc]){
-            d.renewal = firebaseRenewals[vc];
-            d.renewalRaw = firebaseRenewals[vc];
+            const r = firebaseRenewals[vc];
+            d.renewal = typeof r === 'object' ? r.renewal : r;
+            d.renewalRaw = typeof r === 'object' ? r.renewal : r;
+            if(typeof r === 'object' && r.status) d.status = r.status;
           }
         });
         applyAll();
@@ -3014,7 +3018,10 @@ async function loadRenewalDates(){
     if(data.renewals && data.renewals.length){
       firebaseRenewals = {};
       data.renewals.forEach(r=>{
-        if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = r.renewal;
+        if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = {
+          renewal: r.renewal,
+          status: r.status || ''
+        };
       });
       // localStorage లో save చేయి
       try {
@@ -3027,8 +3034,9 @@ async function loadRenewalDates(){
         merged.forEach(d=>{
           const vc = normVC(d.vc);
           if(firebaseRenewals[vc]){
-            d.renewal = firebaseRenewals[vc];
-            d.renewalRaw = firebaseRenewals[vc];
+            d.renewal = firebaseRenewals[vc].renewal;
+            d.renewalRaw = firebaseRenewals[vc].renewal;
+            if(firebaseRenewals[vc].status) d.status = firebaseRenewals[vc].status;
           }
         });
         applyAll();

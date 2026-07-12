@@ -645,7 +645,15 @@ app.post('/renewalSync/save', async (req, res) => {
         return fetch(`${FS_BASE}/renewal-dates/${docId}?key=${FS_KEY}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(doc)
+          body: JSON.stringify({
+            fields: {
+              vc: { stringValue: vc },
+              renewal: { stringValue: r.renewal || '' },
+              status: { stringValue: r.status || '' },
+              operator: { stringValue: r.operator || '' },
+              updatedAt: { stringValue: new Date().toISOString() }
+            }
+          })
         }).then(() => { saved++; }).catch(e => console.log(`VC ${vc} error:`, e.message));
       });
       await Promise.all(promises);
@@ -657,6 +665,7 @@ app.post('/renewalSync/save', async (req, res) => {
       renewalCache = renewals.map(r => ({
         vc: r.vc || '',
         renewal: r.renewal || '',
+        status: r.status || '',
         operator: r.operator || '',
         updatedAt: new Date().toISOString()
       }));
