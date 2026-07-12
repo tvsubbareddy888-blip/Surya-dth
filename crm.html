@@ -2530,7 +2530,7 @@ function exportExcel(mode){
     list=filtered;
     if(!list.length){showToast('Records లేవు!',true);return;}
   }
-  const headers=['పేరు','VC Number','Mobile','Alt Mobile','Village','Pack','Technician','Company','Status'];
+  const headers=['పేరు','VC Number','Mobile','Alt Mobile','Village','Pack','System Pack','Technician','Company','Status','Renewal Date'];
   const rows=list.map(d=>[
     d.name||'',
     normVC(d.vc||''),
@@ -2538,9 +2538,11 @@ function exportExcel(mode){
     d.altMobile||'',
     d.village||'',
     d.pack||'',
+    d.systemPack||'',
     d.tech||'',
     d.company||'',
-    d.status||''
+    d.status||'',
+    d.renewal||''
   ]);
   let csv=headers.join(',')+'\n';
   rows.forEach(r=>{csv+=r.map(v=>'"'+(v+'').replace(/"/g,'""')+'"').join(',')+'\n';});
