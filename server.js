@@ -631,16 +631,37 @@ app.post('/renewalSync/save', async (req, res) => {
   }
 });
 
+// RENEWAL DATES CACHE
+let renewalCache = [];
+let renewalCacheTime = 0;
+const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 గంటలు
+
 // RENEWAL DATES GET — CRM లో renewal dates చూపించడానికి
 app.get('/renewalDates', async (req, res) => {
   try {
     const fetch = require('node-fetch');
+    const now = Date.now();
+    
+    // Cache valid అయితే return చేయి
+    if(renewalCache.length > 0 && (now - renewalCacheTime) < CACHE_TTL) {
+      console.log(`[RENEWAL DATES] Serving from cache: ${renewalCache.length} records`);
+      return res.json({ success: true, renewals: renewalCache });
+    }
+    
     const allRenewals = [];
     let pageToken = '';
     do {
       const url = `${FS_BASE}/renewal-dates?key=${FS_KEY}&pageSize=300${pageToken ? '&pageToken=' + pageToken : ''}`;
       const r = await fetch(url);
       const data = await r.json();
+      if(data.error) {
+        console.log('[RENEWAL DATES] Firebase error:', data.error.message);
+        // Cache ఉంటే పాతది return చేయి
+        if(renewalCache.length > 0) {
+          return res.json({ success: true, renewals: renewalCache });
+        }
+        break;
+      }
       const docs = data.documents || [];
       docs.forEach(doc => {
         const f = doc.fields || {};
@@ -653,9 +674,20 @@ app.get('/renewalDates', async (req, res) => {
       });
       pageToken = data.nextPageToken || '';
     } while (pageToken);
+    
+    // Cache update చేయి
+    if(allRenewals.length > 0) {
+      renewalCache = allRenewals;
+      renewalCacheTime = now;
+    }
+    
+    console.log(`[RENEWAL DATES] Loaded ${allRenewals.length} from Firebase`);
     res.json({ success: true, renewals: allRenewals });
   } catch(e) {
     console.log('[RENEWAL DATES ERROR]', e.message);
+    if(renewalCache.length > 0) {
+      return res.json({ success: true, renewals: renewalCache });
+    }
     res.json({ success: false, renewals: [] });
   }
 });
