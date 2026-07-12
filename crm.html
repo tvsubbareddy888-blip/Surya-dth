@@ -2972,25 +2972,42 @@ let firebaseRenewals = {}; // vc → renewal date
 
 async function loadRenewalDates(){
   try{
-    const res = await fetch(`${AR_API}/renewalDates`);
-    const data = await res.json();
-    if(data.renewals && data.renewals.length){
-      firebaseRenewals = {};
-      data.renewals.forEach(r=>{
-        if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = r.renewal;
-      });
-      console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded from Firebase`);
-      // Merged data update చేయి
-      if(merged.length > 0){
-        merged.forEach(d=>{
-          const vc = normVC(d.vc);
-          if(firebaseRenewals[vc]){
-            d.renewal = firebaseRenewals[vc];
-            d.renewalRaw = firebaseRenewals[vc];
-          }
-        });
-        applyAll();
+    firebaseRenewals = {};
+    let pageToken = '';
+    let total = 0;
+    const FS_KEY = 'AIzaSyDJ83sgOZbJCEDYhGCpvlCNdh2-TWAyq-4';
+    const FS_BASE = 'https://firestore.googleapis.com/v1/projects/surya-dth-crm/databases/(default)/documents';
+    do {
+      const url = `${FS_BASE}/renewal-dates?key=${FS_KEY}&pageSize=300${pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if(data.error){
+        console.log('[RENEWAL] Firebase error:', data.error.message);
+        break;
       }
+      const docs = data.documents || [];
+      docs.forEach(doc => {
+        const f = doc.fields || {};
+        const vc = normVC(f.vc?.stringValue || '');
+        const renewal = f.renewal?.stringValue || '';
+        if(vc && renewal) firebaseRenewals[vc] = renewal;
+      });
+      total += docs.length;
+      pageToken = data.nextPageToken || '';
+    } while(pageToken);
+    
+    console.log(`[RENEWAL] ${total} renewal dates loaded from Firebase`);
+    
+    // Merged data update చేయి
+    if(merged.length > 0){
+      merged.forEach(d=>{
+        const vc = normVC(d.vc);
+        if(firebaseRenewals[vc]){
+          d.renewal = firebaseRenewals[vc];
+          d.renewalRaw = firebaseRenewals[vc];
+        }
+      });
+      applyAll();
     }
   }catch(e){
     console.log('[RENEWAL] Load error:', e);
