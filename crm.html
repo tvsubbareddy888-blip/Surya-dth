@@ -2972,6 +2972,29 @@ let firebaseRenewals = {}; // vc → renewal date
 
 async function loadRenewalDates(){
   try{
+    // ముందు localStorage నుండి load చేయి
+    const cached = localStorage.getItem('surya_renewals');
+    const cachedTime = parseInt(localStorage.getItem('surya_renewals_time') || '0');
+    const now = Date.now();
+    const TTL = 3 * 60 * 60 * 1000; // 3 గంటలు
+
+    if(cached && (now - cachedTime) < TTL){
+      firebaseRenewals = JSON.parse(cached);
+      console.log(`[RENEWAL] ${Object.keys(firebaseRenewals).length} renewal dates loaded from localStorage cache`);
+      if(merged.length > 0){
+        merged.forEach(d=>{
+          const vc = normVC(d.vc);
+          if(firebaseRenewals[vc]){
+            d.renewal = firebaseRenewals[vc];
+            d.renewalRaw = firebaseRenewals[vc];
+          }
+        });
+        applyAll();
+      }
+      return;
+    }
+
+    // Cache లేదు లేదా expired — Render నుండి fresh load చేయి
     const res = await fetch(`${AR_API}/renewalDates`);
     const data = await res.json();
     if(data.renewals && data.renewals.length){
@@ -2979,7 +3002,13 @@ async function loadRenewalDates(){
       data.renewals.forEach(r=>{
         if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = r.renewal;
       });
-      console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded from Firebase`);
+      // localStorage లో save చేయి
+      try {
+        localStorage.setItem('surya_renewals', JSON.stringify(firebaseRenewals));
+        localStorage.setItem('surya_renewals_time', now.toString());
+      } catch(e) { console.log('[RENEWAL] localStorage save error:', e); }
+      
+      console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded from Render & cached`);
       if(merged.length > 0){
         merged.forEach(d=>{
           const vc = normVC(d.vc);
@@ -2993,6 +3022,12 @@ async function loadRenewalDates(){
     }
   }catch(e){
     console.log('[RENEWAL] Load error:', e);
+    // Error వచ్చినా cached data వాడు
+    const cached = localStorage.getItem('surya_renewals');
+    if(cached){
+      firebaseRenewals = JSON.parse(cached);
+      console.log(`[RENEWAL] Using cached data: ${Object.keys(firebaseRenewals).length} records`);
+    }
   }
 }
 
