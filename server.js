@@ -444,9 +444,16 @@ app.get('/autorenew', async (req, res) => {
     allDocs.forEach(doc => {
       const vc = doc.fields?.vc?.stringValue;
       const name = doc.fields?.name?.stringValue || '';
-      const renewal = doc.fields?.renewal?.stringValue || '';
       const company = doc.fields?.company?.stringValue || '';
       const mobile = doc.fields?.mobile?.stringValue || '';
+      
+      // renewalCache నుండి latest renewal date తీసుకో
+      let renewal = doc.fields?.renewal?.stringValue || '';
+      if(vc && renewalCache.length > 0) {
+        const cached = renewalCache.find(r => r.vc === vc);
+        if(cached && cached.renewal) renewal = cached.renewal;
+      }
+      
       if (vc) vcs.push({ 
         vc, name, renewal, company, mobile,
         lastRecharged: doc.fields?.lastRecharged?.stringValue || '',
