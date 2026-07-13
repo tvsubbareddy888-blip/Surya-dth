@@ -258,6 +258,9 @@ app.post('/autorenew/batch', async (req, res) => {
     }
 
     console.log(`Batch done: ${totalSuccess} processed`);
+    // Cache clear చేయి — next request లో fresh data వస్తుంది
+    autoRenewCache = [];
+    autoRenewCacheTime = 0;
     res.json({ success: true, processed: totalSuccess });
   } catch (e) {
     console.log('Batch error:', e.message);
@@ -426,19 +429,50 @@ app.delete('/autorenew/all', async (req, res) => {
   }
 });
 
-// GET all auto-renew customers (with pagination)
+// AUTO RENEW CUSTOMERS CACHE
+let autoRenewCache = [];
+let autoRenewCacheTime = 0;
+
+// GET all auto-renew customers (with pagination + cache)
 app.get('/autorenew', async (req, res) => {
   try {
     const fetch = require('node-fetch');
+    const now = Date.now();
+    const forceRefresh = req.query.refresh === '1';
+    
+    // Cache valid అయితే return చేయి (15 minutes TTL)
+    if(!forceRefresh && autoRenewCache.length > 0 && (now - autoRenewCacheTime) < 15 * 60 * 1000) {
+      // renewalCache తో merge చేయి
+      const customers = autoRenewCache.map(c => {
+        let renewal = c.renewal || '';
+        if(c.vc && renewalCache.length > 0) {
+          const cached = renewalCache.find(r => r.vc === c.vc);
+          if(cached && cached.renewal) renewal = cached.renewal;
+        }
+        return { ...c, renewal };
+      });
+      console.log(`Auto Renew GET: ${customers.length} customers (cache)`);
+      return res.json({ success: true, customers });
+    }
+    
     let allDocs = [];
     let nextPage = null;
     do {
       const url = `${FS_BASE}/auto-renew-customers?key=${FS_KEY}&pageSize=300${nextPage ? '&pageToken=' + nextPage : ''}`;
       const r = await fetch(url);
       const data = await r.json();
-      if (data.documents) allDocs = allDocs.concat(data.documents);
+      if(data.error) {
+        // Quota exceeded — cache ఉంటే return చేయి
+        if(autoRenewCache.length > 0) {
+          console.log(`Auto Renew GET: ${autoRenewCache.length} customers (quota exceeded, using cache)`);
+          return res.json({ success: true, customers: autoRenewCache });
+        }
+        console.log('Auto Renew GET: 0 customers (quota exceeded)');
+        return res.json({ success: true, customers: [] });
+      }
+      if(data.documents) allDocs = allDocs.concat(data.documents);
       nextPage = data.nextPageToken || null;
-    } while (nextPage);
+    } while(nextPage);
 
     const vcs = [];
     allDocs.forEach(doc => {
@@ -447,23 +481,32 @@ app.get('/autorenew', async (req, res) => {
       const company = doc.fields?.company?.stringValue || '';
       const mobile = doc.fields?.mobile?.stringValue || '';
       
-      // renewalCache నుండి latest renewal date తీసుకో
       let renewal = doc.fields?.renewal?.stringValue || '';
       if(vc && renewalCache.length > 0) {
         const cached = renewalCache.find(r => r.vc === vc);
         if(cached && cached.renewal) renewal = cached.renewal;
       }
       
-      if (vc) vcs.push({ 
+      if(vc) vcs.push({ 
         vc, name, renewal, company, mobile,
         lastRecharged: doc.fields?.lastRecharged?.stringValue || '',
         lastRenewalDate: doc.fields?.lastRenewalDate?.stringValue || ''
       });
     });
+    
+    // Cache update చేయి
+    if(vcs.length > 0) {
+      autoRenewCache = vcs;
+      autoRenewCacheTime = now;
+    }
+    
     console.log(`Auto Renew GET: ${vcs.length} customers`);
     res.json({ success: true, customers: vcs });
-  } catch (e) {
+  } catch(e) {
     console.log('Firestore GET error:', e.message);
+    if(autoRenewCache.length > 0) {
+      return res.json({ success: true, customers: autoRenewCache });
+    }
     res.json({ success: false, error: e.message });
   }
 });
