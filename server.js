@@ -445,11 +445,13 @@ app.get('/autorenew', async (req, res) => {
       // renewalCache తో merge చేయి
       const customers = autoRenewCache.map(c => {
         let renewal = c.renewal || '';
+        let status = c.status || '';
         if(c.vc && renewalCache.length > 0) {
           const cached = renewalCache.find(r => r.vc === c.vc);
           if(cached && cached.renewal) renewal = cached.renewal;
+          if(cached && cached.status) status = cached.status;
         }
-        return { ...c, renewal };
+        return { ...c, renewal, status };
       });
       console.log(`Auto Renew GET: ${customers.length} customers (cache)`);
       return res.json({ success: true, customers });
@@ -482,13 +484,15 @@ app.get('/autorenew', async (req, res) => {
       const mobile = doc.fields?.mobile?.stringValue || '';
       
       let renewal = doc.fields?.renewal?.stringValue || '';
+      let status = doc.fields?.status?.stringValue || '';
       if(vc && renewalCache.length > 0) {
         const cached = renewalCache.find(r => r.vc === vc);
         if(cached && cached.renewal) renewal = cached.renewal;
+        if(cached && cached.status) status = cached.status;
       }
       
       if(vc) vcs.push({ 
-        vc, name, renewal, company, mobile,
+        vc, name, renewal, status, company, mobile,
         lastRecharged: doc.fields?.lastRecharged?.stringValue || '',
         lastRenewalDate: doc.fields?.lastRenewalDate?.stringValue || ''
       });
