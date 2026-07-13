@@ -1360,7 +1360,7 @@ function buildWAMsg(d,type){
   const daysStr=days===null?'':days<0?(Math.abs(days)+' రోజులు అయింది'):days===0?'ఈరోజు expire అవుతుంది!':days+' రోజులు మిగిలాయి';
   const L='─────────────────';
   const hdr='🌟 *SURYA DTH* 🌟\n📡 Dish TV | D2H | Tata Play | Airtel | Sun Direct\n✅ Authorized Dealer\n'+L;
-  const ftr=L+'\n📞 కాల్ చేయండి: *9963246388*\n'+L;
+  const ftr=L;
   if(type==='renewal') return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH subscription renewal గురించి గుర్తు చేయడానికి contact చేస్తున్నాం.\n📅 Renewal Date: *'+renewal+'*\n⏰ '+daysStr+'\n⚠️ సమయానికి renew చేయకపోతే మీ TV చానెల్స్ బంద్ అయిపోతాయి. వీలైనంత త్వరగా renew చేయించుకోండి. 🙏\n\nమా కాంటాక్ట్ నెంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏\n\n'+ftr;
   if(type==='deactive'){
     const vc=normVC(d.vc||'');
