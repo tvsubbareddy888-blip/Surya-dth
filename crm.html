@@ -507,6 +507,9 @@ td{padding:7px 9px;white-space:nowrap;}
       <div id="techChkList"></div>
     </div>
   </div>
+  <select id="fPack" onchange="applyAll()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;cursor:pointer;">
+    <option value="">📦 System Pack: అన్నీ</option>
+  </select>
   <button class="fbtn" onclick="clearAll()" title="అన్ని filters clear చేయి" style="background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.3);font-size:13px;font-weight:800;">🔄 Reset All</button>
   <button class="fbtn" onclick="exportCSV()" style="background:rgba(16,185,129,.15);color:var(--green);border-color:rgba(16,185,129,.3)">⬇ CSV</button>
   <button class="fbtn" onclick="openPackModal()" style="background:rgba(245,158,11,.15);color:var(--accent);border-color:rgba(245,158,11,.3)">💰 Packs</button>
@@ -2426,7 +2429,7 @@ function mergeSync(){
       webSource:web?web.source:''
     };
   });
-  updateStats();applyAll();populateTech();
+  updateStats();applyAll();populateTech();populatePackFilter();
 }
 
 function updateStats(){
@@ -2444,6 +2447,21 @@ function updateStats(){
   const allWebK={...dishWeb,...d2hWeb};const excelK=new Set(myData.map(d=>d.vcKey));
   const webOnlyC=Object.keys(allWebK).filter(k=>!excelK.has(k)).length;
   if(document.getElementById('sWebOnly'))document.getElementById('sWebOnly').textContent=webOnlyC;
+}
+
+function populatePackFilter(){
+  const sel = document.getElementById('fPack');
+  if(!sel) return;
+  const curVal = sel.value;
+  const packs = [...new Set(merged.map(d=>d.systemPack).filter(p=>p && p!=='ERROR'))].sort();
+  sel.innerHTML = '<option value="">📦 System Pack: అన్నీ</option>';
+  packs.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  if(curVal) sel.value = curVal;
 }
 
 function populateTech(){
@@ -2623,6 +2641,9 @@ function applyAll(){
     // Multi-tech filter
     if(selectedTechs.size>0&&!selectedTechs.has(d.tech))return false;
     if(isTechView&&techViewName&&!d.tech.toUpperCase().includes(techViewName.toUpperCase())&&!techViewName.toUpperCase().includes(d.tech.toUpperCase()))return false;
+    // System Pack filter
+    const packFilter = document.getElementById('fPack')?.value||'';
+    if(packFilter && (d.systemPack||'') !== packFilter) return false;
     if(srch){const hay=[d.name,d.vc,d.mobile,d.village,d.tech,d.pack,d.webName,d.altMobile].join(' ').toLowerCase();if(!hay.includes(srch))return false;}
     // Renewal date filter
     if(rFilter){
@@ -2656,6 +2677,8 @@ function clearAll(){
   // Search & Tech clear
   document.getElementById('srch').value='';
   document.getElementById('fTech').value='';
+  const fPack = document.getElementById('fPack');
+  if(fPack) fPack.value='';
   selectedTechs.clear();
   document.querySelectorAll('#techChkList input[type=checkbox]').forEach(c=>c.checked=false);
   const allChk=document.getElementById('tchk-all');
