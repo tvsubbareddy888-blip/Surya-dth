@@ -2990,7 +2990,6 @@ let firebaseRenewals = {}; // vc → renewal date
 
 async function loadRenewalDates(){
   try{
-    // ముందు localStorage నుండి load చేయి
     const cached = localStorage.getItem('surya_renewals');
     const cachedTime = parseInt(localStorage.getItem('surya_renewals_time') || '0');
     const now = Date.now();
@@ -3001,7 +3000,7 @@ async function loadRenewalDates(){
       try {
         const parsed = JSON.parse(cached);
         const firstVal = Object.values(parsed)[0];
-        if(typeof firstVal === 'string') {
+        if(typeof firstVal === 'string' || (typeof firstVal === 'object' && !('status' in firstVal))) {
           localStorage.removeItem('surya_renewals');
           localStorage.removeItem('surya_renewals_time');
           console.log('[RENEWAL] Old format detected, cache cleared');
@@ -3012,9 +3011,34 @@ async function loadRenewalDates(){
       }
     }
 
-    if(cached && (now - cachedTime) < TTL){
-      firebaseRenewals = JSON.parse(cached);
-      console.log(`[RENEWAL] ${Object.keys(firebaseRenewals).length} renewal dates loaded from localStorage cache`);
+    // Render నుండి always fresh load చేయి — cache valid అయినా server time compare చేయి
+    const res = await fetch(`${AR_API}/renewalDates`);
+    const data = await res.json();
+    if(data.renewals && data.renewals.length){
+      // Server data timestamp check — cached data కంటే newer అయితే update చేయి
+      const serverTime = data.renewals[0]?.updatedAt ? new Date(data.renewals[0].updatedAt).getTime() : 0;
+      const cacheValid = cached && (now - cachedTime) < TTL && serverTime && serverTime <= cachedTime;
+      
+      if(cacheValid) {
+        // Cache valid — localStorage నుండి load చేయి
+        firebaseRenewals = JSON.parse(cached);
+        console.log(`[RENEWAL] ${Object.keys(firebaseRenewals).length} renewal dates loaded from cache (still valid)`);
+      } else {
+        // Fresh data save చేయి
+        firebaseRenewals = {};
+        data.renewals.forEach(r=>{
+          if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = {
+            renewal: r.renewal,
+            status: r.status || ''
+          };
+        });
+        try {
+          localStorage.setItem('surya_renewals', JSON.stringify(firebaseRenewals));
+          localStorage.setItem('surya_renewals_time', now.toString());
+        } catch(e) { console.log('[RENEWAL] localStorage save error:', e); }
+        console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded fresh from Render`);
+      }
+
       if(merged.length > 0){
         merged.forEach(d=>{
           const vc = normVC(d.vc);
@@ -3023,38 +3047,6 @@ async function loadRenewalDates(){
             d.renewal = typeof r === 'object' ? r.renewal : r;
             d.renewalRaw = typeof r === 'object' ? r.renewal : r;
             if(typeof r === 'object' && r.status) d.status = r.status;
-          }
-        });
-        applyAll();
-      }
-      return;
-    }
-
-    // Cache లేదు లేదా expired — Render నుండి fresh load చేయి
-    const res = await fetch(`${AR_API}/renewalDates`);
-    const data = await res.json();
-    if(data.renewals && data.renewals.length){
-      firebaseRenewals = {};
-      data.renewals.forEach(r=>{
-        if(r.vc && r.renewal) firebaseRenewals[normVC(r.vc)] = {
-          renewal: r.renewal,
-          status: r.status || ''
-        };
-      });
-      // localStorage లో save చేయి
-      try {
-        localStorage.setItem('surya_renewals', JSON.stringify(firebaseRenewals));
-        localStorage.setItem('surya_renewals_time', now.toString());
-      } catch(e) { console.log('[RENEWAL] localStorage save error:', e); }
-      
-      console.log(`[RENEWAL] ${data.renewals.length} renewal dates loaded from Render & cached`);
-      if(merged.length > 0){
-        merged.forEach(d=>{
-          const vc = normVC(d.vc);
-          if(firebaseRenewals[vc]){
-            d.renewal = firebaseRenewals[vc].renewal;
-            d.renewalRaw = firebaseRenewals[vc].renewal;
-            if(firebaseRenewals[vc].status) d.status = firebaseRenewals[vc].status;
           }
         });
         applyAll();
