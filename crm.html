@@ -1229,6 +1229,7 @@ async function pullFromFirebase(){
     updateDot(1,true,'Excel: '+myData.length+' records ✓');
     if(Object.keys(dishWeb).length) updateDot(2,true,'Dish: '+Object.keys(dishWeb).length+' ✓');
     if(Object.keys(d2hWeb).length) updateDot(3,true,'D2H: '+Object.keys(d2hWeb).length+' ✓');
+    if(Object.keys(firebaseRenewals).length === 0) await loadRenewalDates();
     mergeSync();
     document.getElementById('fbActions').style.display='flex';
     // Auto apply tech filter if tech view
@@ -1271,6 +1272,7 @@ async function autoConnect(){
       updateDot(1,true,'Excel: '+myData.length+' ✓');
       if(Object.keys(dishWeb).length) updateDot(2,true,'Dish: '+Object.keys(dishWeb).length+' ✓');
       if(Object.keys(d2hWeb).length) updateDot(3,true,'D2H: '+Object.keys(d2hWeb).length+' ✓');
+      if(Object.keys(firebaseRenewals).length === 0) await loadRenewalDates();
       mergeSync();
       document.getElementById('fbActions').style.display='flex';
       if(isTechView && techViewName){
