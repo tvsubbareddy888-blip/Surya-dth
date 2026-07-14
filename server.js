@@ -430,6 +430,34 @@ app.delete('/autorenew/all', async (req, res) => {
 });
 
 // AUTO RENEW CUSTOMERS CACHE
+const fs = require('fs');
+const RENEWAL_CACHE_FILE = '/tmp/renewalCache.json';
+const PACK_CACHE_FILE = '/tmp/packCache.json';
+
+// File cache నుండి load చేయి
+function loadFileCache(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      console.log(`[CACHE] Loaded from file: ${filePath} (${Array.isArray(data) ? data.length : Object.keys(data).length} records)`);
+      return data;
+    }
+  } catch(e) {
+    console.log(`[CACHE] File load error: ${e.message}`);
+  }
+  return null;
+}
+
+// File cache లో save చేయి
+function saveFileCache(filePath, data) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
+    console.log(`[CACHE] Saved to file: ${filePath}`);
+  } catch(e) {
+    console.log(`[CACHE] File save error: ${e.message}`);
+  }
+}
+
 let autoRenewCache = [];
 let autoRenewCacheTime = 0;
 
@@ -557,8 +585,8 @@ app.delete('/autorenew/:vc', async (req, res) => {
 });
 
 // PACK DETAILS CACHE
-let packCache = {};
-let packCacheTime = 0;
+let packCache = loadFileCache(PACK_CACHE_FILE) || {};
+let packCacheTime = Object.keys(packCache).length > 0 ? Date.now() : 0;
 const PACK_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 గంటలు
 
 // PACK SYNC — CRM నుండి VCs పంపి VPS bot trigger చేయి
@@ -593,6 +621,7 @@ app.post('/packSync/save', async (req, res) => {
       if(p.vc) packCache[p.vc] = p.systemPack || '';
     });
     packCacheTime = Date.now();
+    saveFileCache(PACK_CACHE_FILE, packCache);
     console.log(`[PACK SYNC SAVE] Cache updated: ${Object.keys(packCache).length} packs`);
     
     for (const pack of (packs||[])) {
@@ -724,6 +753,7 @@ app.post('/renewalSync/save', async (req, res) => {
         updatedAt: new Date().toISOString()
       }));
       renewalCacheTime = Date.now();
+      saveFileCache(RENEWAL_CACHE_FILE, renewalCache);
       console.log(`[RENEWAL SYNC SAVE] Cache updated: ${renewalCache.length} records`);
     }
     
@@ -736,8 +766,8 @@ app.post('/renewalSync/save', async (req, res) => {
 });
 
 // RENEWAL DATES CACHE
-let renewalCache = [];
-let renewalCacheTime = 0;
+let renewalCache = loadFileCache(RENEWAL_CACHE_FILE) || [];
+let renewalCacheTime = renewalCache.length > 0 ? Date.now() : 0;
 const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 గంటలు
 
 // RENEWAL DATES GET — CRM లో renewal dates చూపించడానికి
