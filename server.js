@@ -799,4 +799,22 @@ app.get('/renewalDates', async (req, res) => {
 app.listen(PORT, () => {
   console.log('Surya DTH Server running on port ' + PORT);
   console.log('Bot URL: ' + (RECHARGE_BOT_URL || 'NOT SET'));
+  
+  // Startup లో VPS నుండి renewal sync trigger చేయి — cache populate అవ్వాలి
+  setTimeout(async () => {
+    try {
+      if(!RECHARGE_BOT_URL) return;
+      const fetch = require('node-fetch');
+      console.log('[STARTUP] Triggering renewal sync to populate cache...');
+      const res = await fetch(`${RECHARGE_BOT_URL}/renewalSync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+        timeout: 10000
+      });
+      console.log('[STARTUP] Renewal sync triggered!');
+    } catch(e) {
+      console.log('[STARTUP] Renewal sync trigger failed:', e.message);
+    }
+  }, 5000); // 5 seconds తర్వాత trigger
 });
