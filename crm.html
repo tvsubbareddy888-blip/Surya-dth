@@ -3060,12 +3060,10 @@ async function loadRenewalDates(){
 }
 
 checkURLParams();
+autoConnect();
 loadAutoRenew();
 loadPackDetails();
-// Renewal dates ముందు load చేసి తర్వాత autoConnect చేయి
-loadRenewalDates().then(() => {
-  autoConnect();
-});
+loadRenewalDates();
 // Auto Renew Firebase నుండి load చేయి
 window.addEventListener('load', ()=>{
   setTimeout(loadAutoRenew, 1000);
