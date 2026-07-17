@@ -862,6 +862,8 @@ td{padding:7px 9px;white-space:nowrap;}
         <input type="number" id="defaultPct" class="pack-inp" style="text-align:center;font-size:14px;" placeholder="70.8" step="0.1" min="50" max="100">
         <span style="font-size:12px;color:var(--muted);">%</span>
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;">📦 Pack wise %</div>
+      <div id="packPctList" style="margin-bottom:8px;"></div>
       <button onclick="saveRechargeSettings()" style="background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:8px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;">💾 Save Recharge %</button>
       <div id="pctStatus" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px;"></div>
       <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">
@@ -1366,7 +1368,7 @@ function buildWAMsg(d,type){
   if(type==='renewal') return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH subscription renewal గురించి గుర్తు చేయడానికి contact చేస్తున్నాం.\n📅 Renewal Date: *'+renewal+'*\n⏰ '+daysStr+'\n⚠️ సమయానికి renew చేయకపోతే మీ TV చానెల్స్ బంద్ అయిపోతాయి. వీలైనంత త్వరగా renew చేయించుకోండి. 🙏\n\nమా కాంటాక్ట్ నెంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏\n\n'+ftr;
   if(type==='deactive'){
     const vc=normVC(d.vc||'');
-    const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||localStorage.getItem('recharge_pct')||'70.8');
+    const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||'')||getPackPct(d.systemPack);
     const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
     let payLink=localStorage.getItem('paylink_'+vc);
     if(!payLink){
@@ -1712,7 +1714,7 @@ function printQRBatch(mode){
     const vc=normVC(d.vc||'');
     let payLink=localStorage.getItem('paylink_'+vc);
     if(!payLink){
-      const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||localStorage.getItem('recharge_pct')||'70.8');
+      const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||'')||getPackPct(d.systemPack);
       const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
       payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
         +'?vc='+encodeURIComponent(vc)
@@ -2062,7 +2064,7 @@ function sharePayLinkWA(){
   const d=qrCurrentCustomer;
   const p=packSettings[selectedPackIdx];
   const vc=normVC(d.vc||'');
-  const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||localStorage.getItem('recharge_pct')||'70.8');
+  const custPct=parseFloat(localStorage.getItem('recharge_pct_'+vc)||'')||getPackPct(d.systemPack);
   const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
   let payLink=localStorage.getItem('paylink_'+vc);
   if(!payLink){
@@ -2147,9 +2149,43 @@ function saveRechargeSettings(){
   const pct=parseFloat(document.getElementById('defaultPct').value);
   if(!pct||pct<50||pct>100){showToast('50-100 మధ్య % enter చేయండి!',true);return;}
   localStorage.setItem('recharge_pct',pct.toString());
+  // Pack wise % save చేయి
+  const packPcts = getPackPcts();
+  document.querySelectorAll('.pack-pct-inp').forEach(inp=>{
+    const pack = inp.dataset.pack;
+    const val = parseFloat(inp.value);
+    if(pack && val && val>=50 && val<=100) packPcts[pack] = val;
+  });
+  localStorage.setItem('pack_pcts', JSON.stringify(packPcts));
   document.getElementById('pctStatus').textContent='✅ '+pct+'% saved!';
   document.getElementById('pctStatus').style.color='var(--green)';
-  showToast('✅ Default Recharge % saved: '+pct+'%');
+  showToast('✅ Recharge % saved!');
+}
+
+function getPackPcts(){
+  try{ return JSON.parse(localStorage.getItem('pack_pcts')||'{}'); }catch(e){ return {}; }
+}
+
+function getPackPct(systemPack){
+  const defaultPct = parseFloat(localStorage.getItem('recharge_pct')||'70.8');
+  if(!systemPack || systemPack==='ERROR') return defaultPct;
+  const packPcts = getPackPcts();
+  return packPcts[systemPack] || defaultPct;
+}
+
+function populatePackPctList(){
+  const el = document.getElementById('packPctList');
+  if(!el) return;
+  const packPcts = getPackPcts();
+  const packs = [...new Set(merged.map(d=>d.systemPack).filter(p=>p&&p!=='ERROR'))].sort();
+  if(!packs.length){ el.innerHTML='<div style="font-size:11px;color:var(--muted);">Pack Sync చేయండి</div>'; return; }
+  el.innerHTML = packs.map(p=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <label style="font-size:11px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p}">${p}</label>
+      <input type="number" class="pack-pct-inp pack-inp" data-pack="${p}" value="${packPcts[p]||''}" placeholder="70.8" step="0.1" min="50" max="100" style="width:70px;text-align:center;font-size:13px;">
+      <span style="font-size:11px;color:var(--muted);">%</span>
+    </div>
+  `).join('');
 }
 
 // Per-customer % modal
@@ -2164,8 +2200,8 @@ function openCustPctModal(d){
   showToast('✅ '+d.name+' కి '+p+'% set అయింది!');
 }
 
-function getRechargeAmt(customerAmt){
-  const pct=parseFloat(localStorage.getItem('recharge_pct')||'70.8');
+function getRechargeAmt(customerAmt, systemPack){
+  const pct = getPackPct(systemPack);
   return Math.floor(customerAmt*pct/100);
 }
 
@@ -2198,6 +2234,8 @@ function loadCFCreds(){
   if(document.getElementById('cfSecKey')) document.getElementById('cfSecKey').value=secKey;
   if(document.getElementById('defaultPct')) document.getElementById('defaultPct').value=pct;
   if(document.getElementById('phoenixPass')) document.getElementById('phoenixPass').placeholder='••••••••';
+  // Pack wise % populate చేయి
+  populatePackPctList();
   if(appId&&secKey){
     const st=document.getElementById('cfCredsStatus');
     if(st){st.textContent='✅ Credentials loaded';st.style.color='var(--green)';}
@@ -2210,7 +2248,7 @@ async function generateCFLink(){
   const btn=document.getElementById('cfLinkBtn');
   btn.textContent='⏳ Creating...';
   btn.disabled=true;
-  const custPct=parseFloat(localStorage.getItem('recharge_pct_'+d.vc)||localStorage.getItem('recharge_pct')||'70.8');
+  const custPct=parseFloat(localStorage.getItem('recharge_pct_'+d.vc)||'')||getPackPct(d.systemPack);
   const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
   const payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
     +'?vc='+encodeURIComponent(d.vc)
