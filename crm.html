@@ -2412,6 +2412,19 @@ function mergeSync(){
     const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
     const fbRenewalStr = typeof fbRenewal === 'object' ? fbRenewal.renewal : fbRenewal;
     const fbStatus = typeof fbRenewal === 'object' ? fbRenewal.status : '';
+    
+    // Renewal date బట్టి status calculate చేయి
+    const renewalDateStr = renewalRaw || (web?web.renewalRaw:'') || d.renewalRaw || '';
+    let calcStatus = '';
+    if(renewalDateStr) {
+      const renewalDate = parseDate(renewalDateStr);
+      if(renewalDate) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        renewalDate.setHours(0,0,0,0);
+        calcStatus = renewalDate >= today ? 'Active' : 'Deactive';
+      }
+    }
     const renewal = fbRenewalStr || (web?web.renewal:'');
     const renewalRaw = fbRenewalStr || (web?web.renewalRaw:'');
     const fbSystemPack = (() => {
@@ -2421,7 +2434,7 @@ function mergeSync(){
     })();
     return{...d,
       company:company,
-      status:fbStatus||(web?web.status:'')||d.status||'',
+      status:calcStatus||fbStatus||(web?web.status:'')||d.status||'',
       webName:web?web.webName:'',
       stb:web?web.stb:'',
       renewal:renewal,
