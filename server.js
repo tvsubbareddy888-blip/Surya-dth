@@ -811,6 +811,7 @@ app.get('/renewalDates', async (req, res) => {
         allRenewals.push({
           vc: f.vc?.stringValue || '',
           renewal: f.renewal?.stringValue || '',
+          status: f.status?.stringValue || '',
           operator: f.operator?.stringValue || '',
           updatedAt: f.updatedAt?.stringValue || ''
         });
