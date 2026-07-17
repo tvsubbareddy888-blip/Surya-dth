@@ -2412,6 +2412,15 @@ function mergeSync(){
     const fbRenewal = firebaseRenewals[normVC(d.vc)] || '';
     const fbRenewalStr = typeof fbRenewal === 'object' ? fbRenewal.renewal : fbRenewal;
     const fbStatus = typeof fbRenewal === 'object' ? fbRenewal.status : '';
+    // Renewal date బట్టి status calculate చేయి
+    let calcStatus = '';
+    if(renewalRaw) {
+      const rd = parseDate(renewalRaw);
+      if(rd) {
+        const today = new Date(); today.setHours(0,0,0,0); rd.setHours(0,0,0,0);
+        calcStatus = rd >= today ? 'Active' : 'Deactive';
+      }
+    }
     const renewal = fbRenewalStr || (web?web.renewal:'');
     const renewalRaw = fbRenewalStr || (web?web.renewalRaw:'');
     const fbSystemPack = (() => {
@@ -2421,7 +2430,7 @@ function mergeSync(){
     })();
     return{...d,
       company:company,
-      status:fbStatus||(web?web.status:'')||d.status||'',
+      status:calcStatus||fbStatus||(web?web.status:'')||d.status||'',
       webName:web?web.webName:'',
       stb:web?web.stb:'',
       renewal:renewal,
@@ -3032,7 +3041,12 @@ async function loadRenewalDates(){
           if(firebaseRenewals[vc]){
             d.renewal = firebaseRenewals[vc].renewal;
             d.renewalRaw = firebaseRenewals[vc].renewal;
-            if(firebaseRenewals[vc].status) d.status = firebaseRenewals[vc].status;
+            // Renewal date బట్టి status calculate చేయి
+            const rd = parseDate(firebaseRenewals[vc].renewal);
+            if(rd) {
+              const today = new Date(); today.setHours(0,0,0,0); rd.setHours(0,0,0,0);
+              d.status = rd >= today ? 'Active' : 'Deactive';
+            }
           }
         });
         applyAll();
@@ -3047,12 +3061,10 @@ async function loadRenewalDates(){
 }
 
 checkURLParams();
+autoConnect();
 loadAutoRenew();
 loadPackDetails();
-// Renewal dates ముందు load చేసి తర్వాత autoConnect చేయి
-loadRenewalDates().then(() => {
-  autoConnect();
-});
+loadRenewalDates();
 // Auto Renew Firebase నుండి load చేయి
 window.addEventListener('load', ()=>{
   setTimeout(loadAutoRenew, 1000);
