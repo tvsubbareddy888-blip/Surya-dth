@@ -439,6 +439,15 @@ function loadFileCache(filePath) {
   try {
     if (fs.existsSync(filePath)) {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      // Validate — status field ఉందా check చేయి
+      if(Array.isArray(data) && data.length > 0) {
+        const sample = data[0];
+        if(!('status' in sample)) {
+          console.log(`[CACHE] Old format (no status) — deleting: ${filePath}`);
+          fs.unlinkSync(filePath);
+          return null;
+        }
+      }
       console.log(`[CACHE] Loaded from file: ${filePath} (${Array.isArray(data) ? data.length : Object.keys(data).length} records)`);
       return data;
     }
