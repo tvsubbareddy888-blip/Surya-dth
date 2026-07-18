@@ -594,6 +594,9 @@ app.delete('/autorenew/:vc', async (req, res) => {
 });
 
 // PACK DETAILS CACHE
+const PCT_CACHE_FILE = '/tmp/pctCache.json';
+let pctCache = loadFileCache(PCT_CACHE_FILE) || {};
+
 let packCache = loadFileCache(PACK_CACHE_FILE) || {};
 let packCacheTime = Object.keys(packCache).length > 0 ? Date.now() : 0;
 const PACK_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 గంటలు
@@ -833,6 +836,51 @@ app.get('/renewalDates', async (req, res) => {
       return res.json({ success: true, renewals: renewalCache });
     }
     res.json({ success: false, renewals: [] });
+  }
+});
+
+// ── PERCENTAGE GET ──
+app.get('/percentages', (req, res) => {
+  console.log(`[PERCENTAGES] Serving ${Object.keys(pctCache).length} records`);
+  res.json({ success: true, percentages: pctCache });
+});
+
+// ── PERCENTAGE SAVE ──
+app.post('/percentages/save', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { vcs, pct } = req.body;
+    if(!vcs || !pct) return res.json({ success: false, message: 'vcs and pct required' });
+    
+    let saved = 0;
+    for(const vc of vcs) {
+      if(!vc) continue;
+      // Firebase save
+      const doc = {
+        fields: {
+          vc: { stringValue: vc },
+          pct: { doubleValue: parseFloat(pct) },
+          updatedAt: { stringValue: new Date().toISOString() }
+        }
+      };
+      try {
+        await fetch(`${FS_BASE}/vc-percentages/${vc}?key=${FS_KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doc)
+        });
+        pctCache[vc] = parseFloat(pct);
+        saved++;
+      } catch(e) {
+        console.log(`[PCT] VC ${vc} error:`, e.message);
+      }
+    }
+    saveFileCache(PCT_CACHE_FILE, pctCache);
+    console.log(`[PERCENTAGES] ${saved}/${vcs.length} saved`);
+    res.json({ success: true, saved, total: vcs.length });
+  } catch(e) {
+    console.log('[PERCENTAGES] Error:', e.message);
+    res.json({ success: false, message: e.message });
   }
 });
 
