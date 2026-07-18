@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Surya DTH - CRM v5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 :root{
@@ -901,6 +903,14 @@ td{padding:7px 9px;white-space:nowrap;}
 // FIREBASE CONFIG
 // ══════════════════════════════════════════════════════
 const FB_URL = 'https://surya-dth-deta-crm-default-rtdb.firebaseio.com';
+
+// Firebase initialize
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ83sgOZbJCEDYhGCpvlCNdh2-TWAyq-4",
+  databaseURL: "https://surya-dth-deta-crm-default-rtdb.firebaseio.com"
+};
+if(!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // Firestore via Render proxy
 const AR_API = 'https://surya-dth.onrender.com';
