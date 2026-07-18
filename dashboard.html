@@ -217,7 +217,7 @@ function renderList(data){
     const status=r.status||'INITIATED';
     const isFailed=status.startsWith('PAID-RECHARGE FAILED');
     const safeOrderId=(r.order_id||'').replace(/'/g,'&#39;');
-    const safeCustName=(r.customer||'').replace(/'/g,'&#39;');
+    const safeCustName=(String(r.customer||'')).replace(/'/g,'&#39;');
     const manualBtn=isFailed?('<button class="manual-btn" onclick="markManualRecharge(\''+safeOrderId+'\',\''+safeCustName+'\')">&#x2705; Manual Done</button>'):'';
     return`<div class="payment-item" style="${isFailed?'border-left:3px solid var(--red);':''}">
       <div class="item-top">
