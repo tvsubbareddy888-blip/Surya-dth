@@ -1383,17 +1383,13 @@ function buildWAMsg(d,type){
     const vc=normVC(d.vc||'');
     const custPct=getVCPct(vc);
     const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
-    let payLink=localStorage.getItem('paylink_'+vc);
-    if(!payLink){
-      payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
-        +'?vc='+encodeURIComponent(vc)
-        +'&customer='+encodeURIComponent(d.name||'')
-        +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
-        +'&tech='+encodeURIComponent(d.tech||'')
-        +'&pct='+custPct
-        +'&company='+encodeURIComponent(company);
-      localStorage.setItem('paylink_'+vc, payLink);
-    }
+    const payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
+      +'?vc='+encodeURIComponent(vc)
+      +'&customer='+encodeURIComponent(d.name||'')
+      +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
+      +'&tech='+encodeURIComponent(d.tech||'')
+      +'&pct='+custPct
+      +'&company='+encodeURIComponent(company);
     return 'నమస్కారం *'+name+'* గారు! 🙏\n\nమీ DISH Recharge అయిపోయింది, దీని వలన మీ TV channels ఆగిపోయాయి.\n\n📺 Channels మళ్ళీ start అవ్వాలంటే వీలైనంత త్వరగా Recharge చేయించుకోండి.\n\n💰 *Recharge Rates:*\n1 నెలకు       - Rs.250\n6 నెలలకు    - Rs.1500\n1 సంవత్సరం - Rs.3000\n\nమా నంబర్లకి contact చేయండి:\n📞 9963246388 - Subbareddy (Proprietor)\n📞 9533456761 - Mahesh (Technician)\n📞 9346060983 - Ramanji (Technician)\n\n📡 *Surya DTH*\n*Vellatur* 🙏';
   }
   return hdr+'\nనమస్కారం *'+name+'* గారు! 🙏\nమీ DTH గురించి contact చేస్తున్నాం. 🙏\n\n'+ftr;
@@ -1784,19 +1780,15 @@ function printQRBatch(mode){
   // ప్రతి customer కి permanent payment link generate చేయి (saved ఉంటే వాడు, లేదంటే కొత్తది build చేయి)
   const cards=list.map(d=>{
     const vc=normVC(d.vc||'');
-    let payLink=localStorage.getItem('paylink_'+vc);
-    if(!payLink){
-      const custPct=getVCPct(vc);
-      const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
-      payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
-        +'?vc='+encodeURIComponent(vc)
-        +'&customer='+encodeURIComponent(d.name||'')
-        +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
-        +'&tech='+encodeURIComponent(d.tech||'')
-        +'&pct='+custPct
-        +'&company='+encodeURIComponent(company);
-      localStorage.setItem('paylink_'+vc,payLink);
-    }
+    const custPct=getVCPct(vc);
+    const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
+    const payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
+      +'?vc='+encodeURIComponent(vc)
+      +'&customer='+encodeURIComponent(d.name||'')
+      +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
+      +'&tech='+encodeURIComponent(d.tech||'')
+      +'&pct='+custPct
+      +'&company='+encodeURIComponent(company);
     const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(payLink);
     return {name:d.name||'—',vc:vc,village:d.village||'',mobile:d.mobile||'',qrUrl:qrUrl};
   });
@@ -2002,8 +1994,9 @@ function renderPackBtns(){
     wrap.appendChild(btn);
   });
   const p=packSettings[selectedPackIdx];
-  document.getElementById('qrPayAmt').textContent='Customer Pay: ₹'+p.customerPay+' → Recharge: ₹'+p.rechargeAmt;
-  document.getElementById('qrPaySub').textContent='Profit: ₹'+(p.customerPay-p.rechargeAmt)+' | Pack: '+p.label;
+  const dynAmt = Math.floor(p.customerPay * getVCPct(qrCurrentCustomer?.vc) / 100);
+  document.getElementById('qrPayAmt').textContent='Customer Pay: ₹'+p.customerPay+' → Recharge: ₹'+dynAmt;
+  document.getElementById('qrPaySub').textContent='Profit: ₹'+(p.customerPay-dynAmt)+' | Pack: '+p.label;
   updatePayLink(selectedPackIdx);
 }
 
@@ -2138,17 +2131,13 @@ function sharePayLinkWA(){
   const vc=normVC(d.vc||'');
   const custPct=getVCPct(vc);
   const company=(d.company||'').toUpperCase().includes('D2H')?'D2H':'DishTV';
-  let payLink=localStorage.getItem('paylink_'+vc);
-  if(!payLink){
-    payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
-      +'?vc='+encodeURIComponent(vc)
-      +'&customer='+encodeURIComponent(d.name||'')
-      +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
-      +'&tech='+encodeURIComponent(d.tech||'')
-      +'&pct='+custPct
-      +'&company='+encodeURIComponent(company);
-    localStorage.setItem('paylink_'+vc, payLink);
-  }
+  const payLink='https://tvsubbareddy888-blip.github.io/Surya-dth/payment.html'
+    +'?vc='+encodeURIComponent(vc)
+    +'&customer='+encodeURIComponent(d.name||'')
+    +'&mobile='+encodeURIComponent(cleanPhone(d.mobile||''))
+    +'&tech='+encodeURIComponent(d.tech||'')
+    +'&pct='+custPct
+    +'&company='+encodeURIComponent(company);
   const msg='నమస్కారం *'+d.name+'* గారు! 🙏\n\n'
     +'మీ DISH Recharge చేయడానికి క్రింది లింక్ touch చేయండి:\n\n'
     +'💳 *ఇక్కడ Recharge చేయండి:*\n'+payLink+'\n\n'
