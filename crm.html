@@ -2293,7 +2293,6 @@ async function generateCFLink(){
   showToast('✅ Permanent payment link ready!');
   btn.textContent='✅ Link Ready';
   btn.disabled=false;
-  localStorage.setItem('paylink_'+d.vc, payLink);
 
   // Sheet లో record save చేయి
   const sheetUrl='https://script.google.com/macros/s/AKfycbwo5Bxopiw9aGqUNoT56aFhuwGLIfUnVvlKQfIhwEyyibOD1bbCpaEYY3OUyxcU9_I/exec';
