@@ -433,6 +433,7 @@ app.delete('/autorenew/all', async (req, res) => {
 const fs = require('fs');
 const RENEWAL_CACHE_FILE = '/tmp/renewalCache.json';
 const PACK_CACHE_FILE = '/tmp/packCache.json';
+const PCT_CACHE_FILE = '/tmp/pctCache.json';
 
 // File cache నుండి load చేయి
 function loadFileCache(filePath) {
@@ -469,6 +470,59 @@ function saveFileCache(filePath, data) {
 
 let autoRenewCache = [];
 let autoRenewCacheTime = 0;
+
+// PCT Cache — file నుండి load చేయి
+let pctCache = {};
+try {
+  if(fs.existsSync(PCT_CACHE_FILE)) {
+    pctCache = JSON.parse(fs.readFileSync(PCT_CACHE_FILE, 'utf8'));
+    console.log(`[PCT CACHE] Loaded ${Object.keys(pctCache).length} records`);
+  }
+} catch(e) { console.log('[PCT CACHE] Load error:', e.message); }
+
+// ── PERCENTAGES GET ──
+app.get('/percentages', (req, res) => {
+  console.log(`[PERCENTAGES] Serving ${Object.keys(pctCache).length} records`);
+  res.json({ success: true, percentages: pctCache });
+});
+
+// ── PERCENTAGES SAVE ──
+app.post('/percentages/save', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    const { vcs, pct } = req.body;
+    if(!vcs || !pct) return res.json({ success: false, message: 'vcs and pct required' });
+    let saved = 0;
+    for(const vc of vcs) {
+      if(!vc) continue;
+      try {
+        const doc = {
+          fields: {
+            vc: { stringValue: vc },
+            pct: { doubleValue: parseFloat(pct) },
+            updatedAt: { stringValue: new Date().toISOString() }
+          }
+        };
+        await fetch(`${FS_BASE}/vc-percentages/${vc}?key=${FS_KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doc)
+        });
+        pctCache[vc] = parseFloat(pct);
+        saved++;
+      } catch(e) {
+        console.log(`[PCT] VC ${vc} error:`, e.message);
+      }
+    }
+    // File లో save చేయి
+    try { fs.writeFileSync(PCT_CACHE_FILE, JSON.stringify(pctCache), 'utf8'); } catch(e) {}
+    console.log(`[PERCENTAGES] ${saved}/${vcs.length} saved`);
+    res.json({ success: true, saved, total: vcs.length });
+  } catch(e) {
+    console.log('[PERCENTAGES] Error:', e.message);
+    res.json({ success: false, message: e.message });
+  }
+});
 
 // GET all auto-renew customers (with pagination + cache)
 app.get('/autorenew', async (req, res) => {
