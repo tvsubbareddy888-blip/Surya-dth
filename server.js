@@ -107,10 +107,9 @@ app.post('/webhook/cashfree', async (req, res) => {
     console.log('Processing: status=' + status + ' vc=' + vc + ' recharge=' + rechargeAmt + ' operator=' + operator);
 
     if (status === 'SUCCESS' && vc) {
-      // rechargeAmt empty అయితే → pctCache నుండి calculate చేయి
-      if(!rechargeAmt && vc) {
-        const pct = pctCache[vc] || 70.8;
-        // payment amount తీసుకోవాలి
+      // pctCache లో % ఉంటే → always recalculate (payment link tag override)
+      if(vc && pctCache[vc]) {
+        const pct = pctCache[vc];
         let customerAmt = 0;
         try {
           customerAmt = parseFloat(
@@ -122,6 +121,21 @@ app.post('/webhook/cashfree', async (req, res) => {
         if(customerAmt > 0) {
           rechargeAmt = String(Math.floor(customerAmt * pct / 100));
           console.log(`[PCT] VC ${vc}: ${customerAmt} × ${pct}% = ${rechargeAmt}`);
+        }
+      } else if(!rechargeAmt && vc) {
+        // pctCache లేకపోతే default 70.8%
+        const pct = 70.8;
+        let customerAmt = 0;
+        try {
+          customerAmt = parseFloat(
+            body.data?.payment?.payment_amount ||
+            body.data?.order?.order_amount ||
+            body.data?.link_amount || 0
+          );
+        } catch(e) {}
+        if(customerAmt > 0) {
+          rechargeAmt = String(Math.floor(customerAmt * pct / 100));
+          console.log(`[PCT DEFAULT] VC ${vc}: ${customerAmt} × ${pct}% = ${rechargeAmt}`);
         }
       }
       // Duplicate webhook check - ఒకే order_id కి ఒక్కసారి మాత్రమే
