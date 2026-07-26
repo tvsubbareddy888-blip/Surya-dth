@@ -502,14 +502,41 @@ function saveFileCache(filePath, data) {
 let autoRenewCache = [];
 let autoRenewCacheTime = 0;
 
-// PCT Cache — file నుండి load చేయి
+// PCT Cache — file నుండి load చేయి, లేకపోతే Firebase నుండి
 let pctCache = {};
-try {
-  if(fs.existsSync(PCT_CACHE_FILE)) {
-    pctCache = JSON.parse(fs.readFileSync(PCT_CACHE_FILE, 'utf8'));
-    console.log(`[PCT CACHE] Loaded ${Object.keys(pctCache).length} records`);
+async function loadPctCache() {
+  try {
+    if(fs.existsSync(PCT_CACHE_FILE)) {
+      pctCache = JSON.parse(fs.readFileSync(PCT_CACHE_FILE, 'utf8'));
+      console.log(`[PCT CACHE] Loaded ${Object.keys(pctCache).length} records from file`);
+      if(Object.keys(pctCache).length > 0) return;
+    }
+    // File లేదు లేదా empty — Firebase నుండి load చేయి
+    const fetch = require('node-fetch');
+    console.log('[PCT CACHE] Loading from Firebase...');
+    let nextPage = null;
+    do {
+      const url = `${FS_BASE}/vc-percentages?key=${FS_KEY}&pageSize=300${nextPage?'&pageToken='+nextPage:''}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      if(data.documents) {
+        data.documents.forEach(doc => {
+          const vc = doc.fields?.vc?.stringValue;
+          const pct = doc.fields?.pct?.doubleValue || doc.fields?.pct?.integerValue;
+          if(vc && pct) pctCache[vc] = parseFloat(pct);
+        });
+      }
+      nextPage = data.nextPageToken || null;
+    } while(nextPage);
+    console.log(`[PCT CACHE] Loaded ${Object.keys(pctCache).length} records from Firebase`);
+    if(Object.keys(pctCache).length > 0) {
+      fs.writeFileSync(PCT_CACHE_FILE, JSON.stringify(pctCache), 'utf8');
+    }
+  } catch(e) {
+    console.log('[PCT CACHE] Load error:', e.message);
   }
-} catch(e) { console.log('[PCT CACHE] Load error:', e.message); }
+}
+loadPctCache();
 
 // ── PERCENTAGES GET ──
 app.get('/percentages', (req, res) => {
