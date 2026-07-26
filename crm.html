@@ -2516,7 +2516,16 @@ function mergeSync(){
     })();
     return{...d,
       company:company,
-      status:fbStatus||(web?web.status:'')||d.status||'',
+      status:(()=>{
+        if(renewalRaw){
+          const rd=parseDate(renewalRaw);
+          if(rd){
+            const t=new Date();t.setHours(0,0,0,0);rd.setHours(0,0,0,0);
+            return rd>=t?'Active':'Deactive';
+          }
+        }
+        return fbStatus||(web?web.status:'')||d.status||'';
+      })(),
       webName:web?web.webName:'',
       stb:web?web.stb:'',
       renewal:renewal,
@@ -3127,7 +3136,17 @@ async function loadRenewalDates(){
           if(firebaseRenewals[vc]){
             d.renewal = firebaseRenewals[vc].renewal;
             d.renewalRaw = firebaseRenewals[vc].renewal;
-            if(firebaseRenewals[vc].status) d.status = firebaseRenewals[vc].status;
+            if(firebaseRenewals[vc].renewal){
+              const rd=parseDate(firebaseRenewals[vc].renewal);
+              if(rd){
+                const t=new Date();t.setHours(0,0,0,0);rd.setHours(0,0,0,0);
+                d.status=rd>=t?'Active':'Deactive';
+              } else if(firebaseRenewals[vc].status){
+                d.status=firebaseRenewals[vc].status;
+              }
+            } else if(firebaseRenewals[vc].status){
+              d.status=firebaseRenewals[vc].status;
+            }
           }
         });
         applyAll();
