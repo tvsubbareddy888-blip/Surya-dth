@@ -107,6 +107,17 @@ app.post('/webhook/cashfree', async (req, res) => {
     console.log('Processing: status=' + status + ' vc=' + vc + ' recharge=' + rechargeAmt + ' operator=' + operator);
 
     if (status === 'SUCCESS' && vc) {
+      // renewalCache నుండి operator override చేయి — migration handle చేయడానికి
+      if(renewalCache.length > 0) {
+        const cached = renewalCache.find(r => r.vc === vc);
+        if(cached && cached.operator) {
+          const cachedOperator = cached.operator === 'DISH' ? 'DishTV' : 'D2H';
+          if(cachedOperator !== operator) {
+            console.log(`[OPERATOR] Override: ${operator} → ${cachedOperator} for VC ${vc}`);
+            operator = cachedOperator;
+          }
+        }
+      }
       // pctCache లో % ఉంటే → always recalculate (payment link tag override)
       if(vc && pctCache[vc]) {
         const pct = pctCache[vc];
