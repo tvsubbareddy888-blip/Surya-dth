@@ -237,7 +237,25 @@ async function triggerRecharge(vc, amount, orderId, operator) {
 
   if (orderId && SHEET_URL) {
     const status = botData.success ? 'RECHARGED' : ('PAID-RECHARGE FAILED: ' + (botData.message || botData.error || 'Unknown error'));
-    await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(status));
+    try {
+      const updateRes = await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(status));
+      const updateData = await updateRes.json();
+      // Row not found అయితే → కొత్తది create చేయి
+      if(updateData.status === 'not_found') {
+        await fetch(SHEET_URL + '?action=save' +
+          '&tech=Unknown' +
+          '&customer=' + encodeURIComponent(vc) +
+          '&mobile=' +
+          '&village=' +
+          '&vccdsn=' + encodeURIComponent(vc) +
+          '&service=Recharge' +
+          '&amount=' + encodeURIComponent(amount) +
+          '&order_id=' + encodeURIComponent(orderId));
+        await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(status));
+      }
+    } catch(e) {
+      console.log('Sheet update error:', e.message);
+    }
     console.log('Sheet updated to: ' + status);
   }
 
