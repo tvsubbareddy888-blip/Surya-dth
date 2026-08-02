@@ -1488,6 +1488,9 @@ function updateSelBar(){
 function openBulkPctModal(){
   const n = selectedVCs.size;
   if(!n){ showToast('ముందు records select చేయండి!', true); return; }
+  const pin = prompt('🔒 % Set PIN enter చేయండి:');
+  if(pin === null) return;
+  if(pin !== '103599'){ showToast('❌ Wrong PIN!', true); return; }
   document.getElementById('bulkPctInfo').textContent = n + ' VCs selected';
   document.getElementById('bulkPctInput').value = '';
   document.getElementById('bulkPctStatus').textContent = '';
