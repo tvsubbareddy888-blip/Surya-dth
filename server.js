@@ -312,6 +312,7 @@ app.post('/autorenew/batch', async (req, res) => {
         body: JSON.stringify({ writes })
       });
       const batchData = await batchRes.json();
+      console.log('Batch response:', JSON.stringify(batchData).slice(0, 200));
       if (batchData.writeResults) {
         totalSuccess += batchData.writeResults.length;
       }
