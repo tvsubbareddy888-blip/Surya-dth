@@ -294,7 +294,7 @@ app.post('/autorenew/batch', async (req, res) => {
               name: { stringValue: c.name || '' },
               mobile: { stringValue: c.mobile || '' },
               company: { stringValue: c.company || '' },
-              renewal: { stringValue: c.renewal || '' },
+              renewal: { stringValue: (typeof c.renewal === 'object' ? (c.renewal?.renewal || '') : c.renewal) || '' },
               addedAt: { stringValue: new Date().toISOString() }
             }
           }
