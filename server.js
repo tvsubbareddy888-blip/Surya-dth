@@ -238,6 +238,17 @@ async function triggerRecharge(vc, amount, orderId, operator) {
   if (orderId && SHEET_URL) {
     const status = botData.success ? 'RECHARGED' : ('PAID-RECHARGE FAILED: ' + (botData.message || botData.error || 'Unknown error'));
     try {
+      // Duplicate request వచ్చినప్పుడు → Sheet లో ముందే RECHARGED ఉంటే → update చేయకూడదు
+      if(!botData.success && botData.message && botData.message.includes('Duplicate')) {
+        const checkRes = await fetch(SHEET_URL + '?action=checkstatus&order_id=' + encodeURIComponent(orderId));
+        try {
+          const checkData = await checkRes.json();
+          if(checkData.status === 'RECHARGED') {
+            console.log('Sheet already RECHARGED — skipping FAILED update');
+            return { success: true, message: 'Already recharged' };
+          }
+        } catch(e) {}
+      }
       const updateRes = await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(status));
       const updateData = await updateRes.json();
       // Row not found అయితే → కొత్తది create చేయి
