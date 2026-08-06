@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Surya DTH - New Entries</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #060d1a; --card: #111f35; --border: #1a3356;
+  --accent: #f59e0b; --green: #10b981; --red: #ef4444;
+  --text: #e2e8f0; --muted: #64748b;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 16px; }
+.header { text-align: center; padding: 20px 0; }
+.logo { font-size: 22px; font-weight: 800; color: var(--accent); }
+.logo span { color: var(--text); }
+.subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.toolbar {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px; align-items: center;
+}
+.btn {
+  padding: 10px 18px; border-radius: 8px; border: none;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit;
+}
+.btn-excel { background: var(--green); color: #000; }
+.btn-refresh { background: rgba(245,158,11,.15); color: var(--accent); border: 1px solid rgba(245,158,11,.3); }
+.btn-delete { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+.stats {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px; flex: 1; min-width: 100px;
+  text-align: center;
+}
+.stat-num { font-size: 24px; font-weight: 800; color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px; min-width: 700px;
+}
+th {
+  background: #0d1626; color: var(--muted);
+  padding: 10px 12px; text-align: left;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 12px; border-bottom: 1px solid rgba(26,51,86,.5);
+  vertical-align: middle;
+}
+tr:hover td { background: rgba(245,158,11,.05); }
+.badge {
+  display: inline-block; padding: 2px 8px;
+  border-radius: 12px; font-size: 11px; font-weight: 700;
+}
+.badge-tech { background: rgba(245,158,11,.15); color: var(--accent); }
+.del-btn {
+  background: rgba(239,68,68,.15); color: var(--red);
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 12px; cursor: pointer;
+}
+.empty { text-align: center; padding: 40px; color: var(--muted); }
+.loading { text-align: center; padding: 40px; color: var(--accent); }
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--green); color: #000;
+  padding: 12px 24px; border-radius: 8px;
+  font-weight: 700; font-size: 14px;
+  display: none; z-index: 999;
+}
+.pin-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999;
+}
+.pin-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 30px; text-align: center;
+  width: 300px;
+}
+.pin-title { font-size: 18px; font-weight: 800; color: var(--accent); margin-bottom: 16px; }
+.pin-input {
+  width: 100%; background: #0d1626;
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; color: var(--text); font-size: 18px;
+  text-align: center; letter-spacing: 4px;
+  outline: none; margin-bottom: 12px;
+}
+.pin-btn {
+  width: 100%; background: var(--accent); color: #000;
+  border: none; border-radius: 8px; padding: 12px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.filter-wrap { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-select {
+  background: #0d1626; border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+  color: var(--text); font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<!-- PIN Screen -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-card">
+    <div class="pin-title">🔒 PIN Enter చేయండి</div>
+    <input type="password" class="pin-input" id="pinInput" maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter') checkPin()">
+    <button class="pin-btn" onclick="checkPin()">✅ Login</button>
+    <div id="pinError" style="color:var(--red);font-size:12px;margin-top:8px;"></div>
+  </div>
+</div>
+
+<div id="mainContent" style="display:none">
+  <div class="header">
+    <div class="logo">📡 Surya <span>DTH</span></div>
+    <div class="subtitle">New Customer Entries Dashboard</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="totalCount">0</div>
+      <div class="stat-label">Total Entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="todayCount">0</div>
+      <div class="stat-label">Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="techCount">0</div>
+      <div class="stat-label">Technicians</div>
+    </div>
+  </div>
+
+  <div class="filter-wrap">
+    <select class="filter-select" id="filterTech" onchange="applyFilter()">
+      <option value="">అన్ని Technicians</option>
+    </select>
+    <select class="filter-select" id="filterDate" onchange="applyFilter()">
+      <option value="">అన్ని Dates</option>
+      <option value="today">ఈరోజు</option>
+      <option value="week">ఈ వారం</option>
+    </select>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn btn-excel" onclick="downloadExcel()">📥 Excel Download</button>
+    <button class="btn btn-refresh" onclick="loadEntries()">🔄 Refresh</button>
+    <button class="btn btn-delete" onclick="deleteAll()">🗑️ అన్నీ Delete</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Tech</th>
+          <th>Name</th>
+          <th>VC</th>
+          <th>Mobile</th>
+          <th>Village</th>
+          <th>Pack</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="entriesBody">
+        <tr><td colspan="9" class="loading">⏳ Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PIN = '103599';
+const FB_URL = 'https://surya-dth-deta-crm-default-rtdb.firebaseio.com';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ83sgOZbJCEDYhGCpvlCNdh2-TWAyq-4",
+  databaseURL: FB_URL
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let allEntries = [];
+let filtered = [];
+
+function checkPin() {
+  const pin = document.getElementById('pinInput').value;
+  if(pin === PIN) {
+    document.getElementById('pinScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    loadEntries();
+  } else {
+    document.getElementById('pinError').textContent = '❌ Wrong PIN!';
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+async function loadEntries() {
+  document.getElementById('entriesBody').innerHTML = '<tr><td colspan="9" class="loading">⏳ Loading...</td></tr>';
+  try {
+    const snap = await db.ref('newentries').once('value');
+    const data = snap.val() || {};
+    allEntries = Object.entries(data).map(([key, val]) => ({...val, _key: key}));
+    allEntries.sort((a,b) => new Date(b.enteredAt||0) - new Date(a.enteredAt||0));
+    populateFilters();
+    applyFilter();
+    updateStats();
+  } catch(e) {
+    document.getElementById('entriesBody').innerHTML = '<tr><td colspan="9" class="empty">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+function populateFilters() {
+  const techs = [...new Set(allEntries.map(e=>e.tech).filter(Boolean))].sort();
+  const sel = document.getElementById('filterTech');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">అన్ని Technicians</option>';
+  techs.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
+}
+
+function applyFilter() {
+  const tech = document.getElementById('filterTech').value;
+  const date = document.getElementById('filterDate').value;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-7);
+
+  filtered = allEntries.filter(e => {
+    if(tech && e.tech !== tech) return false;
+    if(date === 'today') {
+      const d = new Date(e.enteredAt||0); d.setHours(0,0,0,0);
+      if(d.getTime() !== today.getTime()) return false;
+    }
+    if(date === 'week') {
+      if(new Date(e.enteredAt||0) < weekAgo) return false;
+    }
+    return true;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const body = document.getElementById('entriesBody');
+  if(!filtered.length) {
+    body.innerHTML = '<tr><td colspan="9" class="empty">📭 Entries లేవు</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map((e, i) => {
+    const date = e.enteredAt ? new Date(e.enteredAt).toLocaleString('en-IN') : '-';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${date}</td>
+      <td><span class="badge badge-tech">${e.tech||'-'}</span></td>
+      <td>${e.name||'-'}</td>
+      <td style="font-family:monospace;font-size:12px;">${e.vc||'-'}</td>
+      <td>${e.mobile||'-'}</td>
+      <td>${e.village||'-'}</td>
+      <td style="font-size:12px;">${e.pack||'-'}</td>
+      <td><button class="del-btn" onclick="deleteEntry('${e._key}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('totalCount').textContent = allEntries.length;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayCount = allEntries.filter(e => {
+    const d = new Date(e.enteredAt||0); d.setHours(0,0,0,0);
+    return d.getTime() === today.getTime();
+  }).length;
+  document.getElementById('todayCount').textContent = todayCount;
+  const techs = new Set(allEntries.map(e=>e.tech).filter(Boolean));
+  document.getElementById('techCount').textContent = techs.size;
+}
+
+async function deleteEntry(key) {
+  if(!confirm('Delete చేయాలా?')) return;
+  await db.ref('newentries/' + key).remove();
+  showToast('✅ Deleted!');
+  loadEntries();
+}
+
+async function deleteAll() {
+  if(!confirm('అన్ని entries delete చేయాలా? ఇది undo కాదు!')) return;
+  await db.ref('newentries').remove();
+  showToast('✅ అన్నీ deleted!');
+  loadEntries();
+}
+
+function downloadExcel() {
+  if(!filtered.length) { alert('Entries లేవు!'); return; }
+
+  const headers = [
+    'TECHNICIAN NAME', 'LC NO', 'new/winback', 'CUSTOMER Name',
+    'VC/ ID', 'Mobile Phone Number', 'NEW BOX COMPANY', 'VILLAGE',
+    'ALTERNATIVE MOBILE', 'Created on', 'Next Follow-up Date', 'PACK',
+    'Notes', 'COST AMOUNT', 'tech amount', 'remaing amount', 'PAID', 'BALANCE', 'REMARK 2'
+  ];
+
+  const rows = filtered.map((e, i) => [
+    e.tech || '',
+    String(i+1).padStart(4,'0'),
+    'new',
+    e.name || '',
+    e.vc || '',
+    e.mobile || '',
+    e.company || 'DISH TV',
+    e.village || '',
+    '',
+    e.enteredAt ? new Date(e.enteredAt).toLocaleDateString('en-IN') : '',
+    '', e.pack || '', '', '', '', '', '', '', ''
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map(() => ({ wch: 18 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'New Entries');
+  const today = new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
+  XLSX.writeFile(wb, 'SuryaDTH_NewEntries_' + today + '.xlsx');
+  showToast('✅ Excel downloaded!');
+}
+</script>
+</body>
+</html>

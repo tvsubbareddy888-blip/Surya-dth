@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Surya DTH - New Customer</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #060d1a;
+  --card: #111f35;
+  --border: #1a3356;
+  --accent: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  padding: 16px;
+}
+.header {
+  text-align: center;
+  padding: 20px 0 24px;
+}
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.logo span { color: var(--text); }
+.tech-badge {
+  display: inline-block;
+  background: rgba(245,158,11,.15);
+  border: 1px solid rgba(245,158,11,.3);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.form-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.field {
+  margin-bottom: 16px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+input, select {
+  width: 100%;
+  background: #0d1626;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+}
+select option { background: #0d1626; }
+.pack-info {
+  font-size: 12px;
+  color: var(--green);
+  margin-top: 6px;
+}
+.btn-submit {
+  width: 100%;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--green);
+  color: #000;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  display: none;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.error { background: var(--red); color: #fff; }
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+.success-icon { font-size: 60px; margin-bottom: 16px; }
+.success-title { font-size: 20px; font-weight: 800; color: var(--green); margin-bottom: 8px; }
+.success-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+.btn-new {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-wa {
+  background: #25d366;
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">📡 Surya <span>DTH</span></div>
+  <div class="tech-badge" id="techBadge">Loading...</div>
+</div>
+
+<div id="formSection">
+  <div class="card">
+    <div class="form-title">🆕 కొత్త Customer Entry</div>
+
+    <div class="field">
+      <label>Customer పేరు *</label>
+      <input type="text" id="fName" placeholder="పూర్తి పేరు enter చేయండి" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>VC Number *</label>
+      <input type="text" id="fVC" placeholder="VC Number" inputmode="numeric" maxlength="15">
+    </div>
+
+    <div class="field">
+      <label>Mobile Number *</label>
+      <input type="tel" id="fMobile" placeholder="10 digit mobile number" inputmode="numeric" maxlength="10">
+    </div>
+
+    <div class="field">
+      <label>Village / Area</label>
+      <input type="text" id="fVillage" placeholder="Village లేదా Area పేరు">
+    </div>
+
+    <div class="field">
+      <label>Company *</label>
+      <select id="fCompany">
+        <option value="DishTV">DishTV</option>
+        <option value="Airtel">Airtel</option>
+        <option value="Tata Play">Tata Play</option>
+        <option value="Sun Direct">Sun Direct</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Pack Select చేయండి *</label>
+      <select id="fPack" onchange="updatePackInfo()">
+        <option value="">-- Pack Select చేయండి --</option>
+        <option value="1 Month - ₹250">1 Month - ₹250</option>
+        <option value="2 Months - ₹500">2 Months - ₹500</option>
+        <option value="3 Months - ₹750">3 Months - ₹750</option>
+        <option value="4 Months - ₹1000">4 Months - ₹1000</option>
+        <option value="5 Months - ₹1250">5 Months - ₹1250</option>
+        <option value="6 Months - ₹1500">6 Months - ₹1500</option>
+        <option value="1 Year - ₹3000">1 Year - ₹3000</option>
+      </select>
+      <div class="pack-info" id="packInfo"></div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">✅ Submit చేయండి</button>
+  </div>
+</div>
+
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Successfully Saved!</div>
+  <div class="success-sub" id="successMsg"></div>
+  <button class="btn-wa" onclick="shareWA()">📲 WhatsApp Share</button>
+  <br><br>
+  <button class="btn-new" onclick="resetForm()">➕ కొత్త Customer</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDJ83sgOZbJCEDYhGCpvlCNdh2-TWAyq-4",
+  databaseURL: "https://surya-dth-deta-crm-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Tech name from URL
+const params = new URLSearchParams(window.location.search);
+const techName = params.get('tech') || 'Unknown';
+document.getElementById('techBadge').textContent = '👷 ' + techName;
+
+function updatePackInfo() {
+  const pack = document.getElementById('fPack').value;
+  const info = document.getElementById('packInfo');
+  if(pack) {
+    info.textContent = '✅ ' + pack + ' selected';
+  } else {
+    info.textContent = '';
+  }
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+async function submitForm() {
+  const name = document.getElementById('fName').value.trim();
+  const vc = document.getElementById('fVC').value.trim().replace(/\s/g,'');
+  const mobile = document.getElementById('fMobile').value.trim();
+  const village = document.getElementById('fVillage').value.trim();
+  const pack = document.getElementById('fPack').value;
+
+  if(!name){ showToast('Customer పేరు enter చేయండి!', true); return; }
+  if(!vc || vc.length < 8){ showToast('Valid VC Number enter చేయండి!', true); return; }
+  if(!mobile || mobile.length !== 10){ showToast('10 digit Mobile Number enter చేయండి!', true); return; }
+  if(!pack){ showToast('Pack select చేయండి!', true); return; }
+
+  const company = document.getElementById('fCompany').value;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving...';
+
+  try {
+    const vcKey = vc + '_' + Date.now();
+    const data = {
+      name: name,
+      vc: vc,
+      mobile: mobile,
+      village: village,
+      pack: pack,
+      company: company,
+      tech: techName,
+      enteredAt: new Date().toISOString()
+    };
+
+    await db.ref('newentries/' + vcKey).set(data);
+
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('successMsg').textContent = name + ' (' + vc + ') successfully saved!';
+    
+    // WhatsApp message prepare
+    const date = new Date().toLocaleDateString('en-IN');
+    const waMsg = `✅ New Customer Entry\n👤 Name: ${name}\n📺 VC: ${vc}\n📱 Mobile: ${mobile}\n🏘️ Village: ${village||'-'}\n📦 Pack: ${pack}\n👷 Tech: ${techName}\n📅 Date: ${date}\n\n📡 Surya DTH`;
+    window._waMsg = waMsg;
+    
+    document.getElementById('successScreen').style.display = 'block';
+
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+    btn.disabled = false;
+    btn.textContent = '✅ Submit చేయండి';
+  }
+}
+
+function shareWA() {
+  const msg = window._waMsg || '';
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function resetForm() {
+  document.getElementById('fName').value = '';
+  document.getElementById('fVC').value = '';
+  document.getElementById('fMobile').value = '';
+  document.getElementById('fVillage').value = '';
+  document.getElementById('fPack').value = '';
+  document.getElementById('packInfo').textContent = '';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = '✅ Submit చేయండి';
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('formSection').style.display = 'block';
+}
+</script>
+</body>
+</html>
