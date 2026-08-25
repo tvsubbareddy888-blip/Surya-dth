@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Surya DTH – Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;600&family=Syne:wght@700;800&family=DM+Mono&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -149,6 +150,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="filter-btn" onclick="filterData('Ramanji',this)">Ramanji</button>
   <button class="filter-btn" onclick="filterData('Viswanath',this)">Viswanath</button>
   <button class="filter-btn" onclick="filterData('Mohan',this)">Mohan</button>
+  <button class="filter-btn" style="background:rgba(16,185,129,.15);color:#34d399;border-color:rgba(16,185,129,.3);" onclick="exportExcel()">📥 Excel</button>
+</div>
+
+<div id="bulkBar" style="display:none;padding:8px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+  <span id="bulkCount" style="font-size:13px;color:var(--gold);font-weight:700;">0 selected</span>
+  <button onclick="bulkMarkManual()" style="background:rgba(6,214,160,.2);color:var(--green);border:1px solid rgba(6,214,160,.3);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✅ Bulk Manual Recharge</button>
+  <button onclick="clearSelection()" style="background:rgba(239,35,60,.1);color:var(--red);border:1px solid rgba(239,35,60,.2);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">✕ Clear</button>
 </div>
 
 <div class="table-wrap">
@@ -210,7 +218,76 @@ function statusClass(status){
   return 'INITIATED';
 }
 
+let selectedOrders = new Set();
+let filtered = [];
+
+function toggleSelect(orderId) {
+  if(selectedOrders.has(orderId)) selectedOrders.delete(orderId);
+  else selectedOrders.add(orderId);
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const cnt = document.getElementById('bulkCount');
+  if(selectedOrders.size > 0) {
+    bar.style.display = 'flex';
+    cnt.textContent = selectedOrders.size + ' selected';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function clearSelection() {
+  selectedOrders.clear();
+  updateBulkBar();
+  renderList(filtered.length ? filtered : allData);
+}
+
+async function bulkMarkManual() {
+  if(!selectedOrders.size) return;
+  if(!confirm(selectedOrders.size + ' records Manual Recharge గా mark చేయాలా?')) return;
+  let done = 0;
+  for(const orderId of selectedOrders) {
+    try {
+      const url = SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=MANUALLY+RECHARGED';
+      await fetch(url);
+      done++;
+    } catch(e) {}
+  }
+  showToast(done + ' records Manual Recharged!');
+  selectedOrders.clear();
+  updateBulkBar();
+  loadData();
+}
+
+function exportExcel() {
+  const data = filtered && filtered.length ? filtered : allData;
+  if(!data.length) { alert('Records లేవు!'); return; }
+  const headers = ['Date', 'Customer', 'VC', 'Mobile', 'Village', 'Tech', 'Service', 'Amount', 'Status', 'Order ID'];
+  const rows = data.map(r => [
+    r.date ? new Date(r.date).toLocaleString('en-IN') : '',
+    r.customer || '',
+    r.vccdsn || '',
+    r.mobile || '',
+    r.village || '',
+    r.tech || '',
+    r.service || '',
+    r.amount || '',
+    r.status || '',
+    r.order_id || ''
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+  const today = new Date().toLocaleDateString('en-IN').replace(/\//g,'-');
+  XLSX.writeFile(wb, 'SuryaDTH_Dashboard_' + today + '.xlsx');
+  showToast('✅ Excel downloaded!');
+}
+
 function renderList(data){
+  filtered = data;
   document.getElementById('recordCount').textContent=data.length+' records';
   if(!data.length){showEmpty('Records లేవు');return;}
   document.getElementById('paymentList').innerHTML=data.map(r=>{
@@ -218,10 +295,15 @@ function renderList(data){
     const isFailed=status.startsWith('PAID-RECHARGE FAILED');
     const safeOrderId=(r.order_id||'').replace(/'/g,'&#39;');
     const safeCustName=(String(r.customer||'')).replace(/'/g,'&#39;');
+    const isSelected = selectedOrders.has(r.order_id||'');
     const manualBtn=isFailed?('<button class="manual-btn" onclick="markManualRecharge(\''+safeOrderId+'\',\''+safeCustName+'\')">&#x2705; Manual Done</button>'):'';
-    return`<div class="payment-item" style="${isFailed?'border-left:3px solid var(--red);':''}">
+    const checkbox=isFailed?`<input type="checkbox" ${isSelected?'checked':''} onclick="toggleSelect('${safeOrderId}')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green);">`:'';
+    return`<div class="payment-item" style="${isFailed?'border-left:3px solid var(--red);':''}${isSelected?'background:rgba(6,214,160,.05);':''}">
       <div class="item-top">
-        <span class="customer-name">${r.customer||'–'}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${checkbox}
+          <span class="customer-name">${r.customer||'–'}</span>
+        </div>
         <span class="amount-badge">₹${parseFloat(r.amount||0).toLocaleString('en-IN')}</span>
       </div>
       <div class="item-mid">
