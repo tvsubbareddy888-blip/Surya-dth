@@ -524,6 +524,7 @@ td{padding:7px 9px;white-space:nowrap;}
 <div class="sel-bar" id="selBar" style="display:none">
   <span class="sel-count" id="selCount">0 selected</span>
   <button class="sel-btn sel-all" onclick="selectAll()">☑ అన్నీ Select</button>
+  <button class="sel-btn" onclick="selectCurrentPage()" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);">☑ ఈ Page</button>
   <button class="sel-btn sel-none" onclick="selectNone()">☐ Clear</button>
   <button class="sel-btn sel-wa" id="selWaBtn" onclick="startBulkSelected()" disabled>📲 WA పంపు</button>
   <button class="sel-btn" id="selShareBtn" onclick="shareSelectedList()" disabled style="background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3);">📋 List Share</button>
@@ -1457,6 +1458,13 @@ function toggleSelect(vcKey){
   if(cb) cb.checked=selectedVCs.has(vcKey);
   const mc=document.getElementById('mc-'+vcKey);
   if(mc) mc.classList.toggle('selected', selectedVCs.has(vcKey));
+}
+
+function selectCurrentPage(){
+  const pg = filtered.slice((curPage-1)*pageSize, curPage*pageSize);
+  pg.forEach(d => selectedVCs.add(d.vcKey));
+  render();
+  updateSelBar();
 }
 
 function selectAll(){
