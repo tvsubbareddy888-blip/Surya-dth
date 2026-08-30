@@ -146,6 +146,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="filter-btn" onclick="filterData('SUCCESS',this)">✅ Recharged</button>
   <button class="filter-btn" onclick="filterData('INITIATED',this)">⏳ Pending</button>
   <button class="filter-btn" onclick="filterData('FAILED',this)">❌ Failed</button>
+  <button class="filter-btn" onclick="filterData('NORMAL_FAILED',this)" style="background:rgba(239,35,60,.05);color:#ff6b6b;border-color:rgba(239,35,60,.2);">❌ Normal Failed</button>
+  <button class="filter-btn" onclick="filterData('AUTO_FAILED',this)" style="background:rgba(239,35,60,.05);color:#ff9f43;border-color:rgba(239,35,60,.2);">🔄 Auto Renewal Failed</button>
   <button class="filter-btn" onclick="filterData('Mahesh',this)">Mahesh</button>
   <button class="filter-btn" onclick="filterData('Ramanji',this)">Ramanji</button>
   <button class="filter-btn" onclick="filterData('Viswanath',this)">Viswanath</button>
@@ -155,6 +157,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <div id="bulkBar" style="display:none;padding:8px 12px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
   <span id="bulkCount" style="font-size:13px;color:var(--gold);font-weight:700;">0 selected</span>
+  <button onclick="selectAllFailed()" style="background:rgba(245,158,11,.2);color:var(--gold);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">☑ అన్నీ Select</button>
   <button onclick="bulkMarkManual()" style="background:rgba(6,214,160,.2);color:var(--green);border:1px solid rgba(6,214,160,.3);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✅ Bulk Manual Recharge</button>
   <button onclick="clearSelection()" style="background:rgba(239,35,60,.1);color:var(--red);border:1px solid rgba(239,35,60,.2);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">✕ Clear</button>
 </div>
@@ -205,7 +208,16 @@ function filterData(filter,btn){
   if(filter==='SUCCESS') filtered=allData.filter(r=>r.status==='RECHARGED');
   else if(filter==='INITIATED') filtered=allData.filter(r=>r.status==='INITIATED'||r.status==='PAYMENT_SUCCESS'||(r.status||'').startsWith('PAID-RECHARGE FAILED'));
   else if(filter==='FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED'));
+  else if(filter==='NORMAL_FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED') && r.tech!=='AUTO RENEWAL');
+  else if(filter==='AUTO_FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED') && r.tech==='AUTO RENEWAL');
   else if(filter!=='ALL') filtered=allData.filter(r=>r.tech===filter);
+  renderList(filtered);
+}
+
+function selectAllFailed(){
+  const failedRows = filtered.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED'));
+  failedRows.forEach(r=>{ if(r.order_id) selectedOrders.add(r.order_id); });
+  updateBulkBar();
   renderList(filtered);
 }
 
