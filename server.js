@@ -236,19 +236,14 @@ async function triggerRecharge(vc, amount, orderId, operator) {
   console.log('Bot response:', JSON.stringify(botData));
 
   if (orderId && SHEET_URL) {
+    // Duplicate request వచ్చినప్పుడు → Sheet update చేయకూడదు (already RECHARGED అయి ఉంటుంది)
+    if(!botData.success && botData.message && botData.message.includes('Duplicate')) {
+      console.log('Duplicate request — skipping Sheet update');
+      return { success: false, message: botData.message };
+    }
+
     const status = botData.success ? 'RECHARGED' : ('PAID-RECHARGE FAILED: ' + (botData.message || botData.error || 'Unknown error'));
     try {
-      // Duplicate request వచ్చినప్పుడు → Sheet లో ముందే RECHARGED ఉంటే → update చేయకూడదు
-      if(!botData.success && botData.message && botData.message.includes('Duplicate')) {
-        const checkRes = await fetch(SHEET_URL + '?action=checkstatus&order_id=' + encodeURIComponent(orderId));
-        try {
-          const checkData = await checkRes.json();
-          if(checkData.status === 'RECHARGED') {
-            console.log('Sheet already RECHARGED — skipping FAILED update');
-            return { success: true, message: 'Already recharged' };
-          }
-        } catch(e) {}
-      }
       const updateRes = await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(status));
       const updateData = await updateRes.json();
       // Row not found అయితే → కొత్తది create చేయి
@@ -942,6 +937,21 @@ app.get('/renewalDates', async (req, res) => {
     if(renewalCache.length > 0 && (now - renewalCacheTime) < CACHE_TTL) {
       console.log(`[RENEWAL DATES] Serving from cache: ${renewalCache.length} records`);
       return res.json({ success: true, renewals: renewalCache });
+    }
+
+    // File cache నుండి load చేయి (renewal_sync.py save చేస్తుంది)
+    if(fs.existsSync(RENEWAL_CACHE_FILE)) {
+      try {
+        const fileData = JSON.parse(fs.readFileSync(RENEWAL_CACHE_FILE, 'utf8'));
+        if(fileData && fileData.length > 0) {
+          renewalCache = fileData;
+          renewalCacheTime = now;
+          console.log(`[RENEWAL DATES] Loaded ${renewalCache.length} from file cache`);
+          return res.json({ success: true, renewals: renewalCache });
+        }
+      } catch(e) {
+        console.log('[RENEWAL DATES] File cache error:', e.message);
+      }
     }
     
     const allRenewals = [];
