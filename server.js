@@ -825,6 +825,28 @@ app.get('/packDetails', async (req, res) => {
       console.log(`[PACK DETAILS] Serving from cache: ${packs.length} packs`);
       return res.json({ success: true, packs });
     }
+
+    // File cache నుండి load చేయి
+    if(fs.existsSync(PACK_CACHE_FILE)) {
+      try {
+        const fileData = JSON.parse(fs.readFileSync(PACK_CACHE_FILE, 'utf8'));
+        if(fileData && Object.keys(fileData).length > 0) {
+          // ERROR packs filter చేయి
+          Object.entries(fileData).forEach(([vc, systemPack]) => {
+            if(systemPack && systemPack !== 'ERROR') packCache[vc] = systemPack;
+          });
+          if(Object.keys(packCache).length > 0) {
+            const packs = Object.entries(packCache).map(([vc, systemPack]) => ({
+              vc, systemPack, operator: '', updatedAt: ''
+            }));
+            console.log(`[PACK DETAILS] Loaded ${packs.length} from file cache`);
+            return res.json({ success: true, packs });
+          }
+        }
+      } catch(e) {
+        console.log('[PACK DETAILS] File cache error:', e.message);
+      }
+    }
     
     // Cache లేదు — Firebase నుండి load చేయి
     const allPacks = [];
