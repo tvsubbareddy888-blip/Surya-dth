@@ -102,6 +102,15 @@ app.post('/webhook/cashfree', async (req, res) => {
       vc = body.data.link_notes && body.data.link_notes.vc_number || '';
       rechargeAmt = body.data.link_notes && body.data.link_notes.recharge_amount || '';
       operator = body.data.link_notes && body.data.link_notes.company || 'DishTV';
+
+      // PAYMENT_LINK_EVENT లో Sheet లో PAYMENT_SUCCESS update మాత్రమే — recharge చేయకూడదు
+      if(vc && orderId && SHEET_URL) {
+        try {
+          await fetch(SHEET_URL + '?action=updatestatus&order_id=' + encodeURIComponent(orderId) + '&status=PAYMENT_SUCCESS');
+        } catch(e) {}
+      }
+      console.log('PAYMENT_LINK_EVENT — Sheet updated, skipping recharge');
+      return;
     }
 
     console.log('Processing: status=' + status + ' vc=' + vc + ' recharge=' + rechargeAmt + ' operator=' + operator);
