@@ -2929,7 +2929,7 @@ function renderDesktopTable(){
     const waType=d.status==='Deactive'?'deactive':(()=>{const n=daysUntil(d.renewalRaw);return n!==null&&n<=30?'renewal':'general';})();
     const isAR = autoRenewVCs.has(normVC(d.vc));
     const isNewRate = d.tech && d.tech.toLowerCase().includes('surya dth');
-    return`<tr style="${isNewRate?'background:rgba(239,68,68,.08);border-left:3px solid rgba(239,68,68,.5);':''}">
+    return`<tr style="${isNewRate?'background:rgba(239,68,68,.3);border-left:4px solid #ef4444;':''}">
 <td><input type="checkbox" class="row-chk" id="chk-${d.vcKey}" ${selectedVCs.has(d.vcKey)?'checked':''} onchange="toggleSelect('${d.vcKey}')"></td>
 <td><button onclick="toggleAutoRenew('${normVC(d.vc)}')" title="${isAR?'Auto Renew ON — click to remove':'Auto Renew OFF — click to add'}" style="background:${isAR?'rgba(251,191,36,.2)':'rgba(255,255,255,.05)'};color:${isAR?'#f59e0b':'var(--muted)'};border:1px solid ${isAR?'rgba(251,191,36,.4)':'var(--border)'};border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;">${isAR?'🔄':'○'}</button></td>
 <td><span class="tech-b ${tc}">${d.tech||'-'}</span></td>
@@ -2971,7 +2971,7 @@ function renderMobileCards(){
     const waType=d.status==='Deactive'?'deactive':(days!==null&&days<=30?'renewal':'general');
     const tyBadge=d.type==='new'?'<span class="ty-new">NEW</span>':d.type==='wb'?'<span class="ty-wb">WB</span>':'';
     const isNewRate = d.tech && d.tech.toLowerCase().includes('surya dth');
-    return`<div class="mcard ${mcCls}" style="${isNewRate?'border-left:3px solid rgba(239,68,68,.7);background:rgba(239,68,68,.06);':''}">
+    return`<div class="mcard ${mcCls}" style="${isNewRate?'border-left:4px solid #ef4444;background:rgba(239,68,68,.25);':''}">
   <div class="mc-top">
     <div><div class="mc-name">${d.name||'-'}</div><div class="mc-sub"><span class="${coCls}">${d.company||''}</span> • ${d.village||'-'}</div></div>
     <div class="mc-badges"><span class="tech-b ${tc}">${d.tech||'-'}</span>${tyBadge}</div>
