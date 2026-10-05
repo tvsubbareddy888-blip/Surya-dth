@@ -148,6 +148,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <button class="filter-btn" onclick="filterData('FAILED',this)">❌ Failed</button>
   <button class="filter-btn" onclick="filterData('NORMAL_FAILED',this)" style="background:rgba(239,35,60,.05);color:#ff6b6b;border-color:rgba(239,35,60,.2);">❌ Normal Failed</button>
   <button class="filter-btn" onclick="filterData('AUTO_FAILED',this)" style="background:rgba(239,35,60,.05);color:#ff9f43;border-color:rgba(239,35,60,.2);">🔄 Auto Renewal Failed</button>
+  <button class="filter-btn" onclick="filterData('PAYMENT_SUCCESS',this)" style="background:rgba(59,130,246,.05);color:#60a5fa;border-color:rgba(59,130,246,.2);">💳 Payment Success</button>
   <button class="filter-btn" onclick="filterData('Mahesh',this)">Mahesh</button>
   <button class="filter-btn" onclick="filterData('Ramanji',this)">Ramanji</button>
   <button class="filter-btn" onclick="filterData('Viswanath',this)">Viswanath</button>
@@ -210,6 +211,7 @@ function filterData(filter,btn){
   else if(filter==='FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED'));
   else if(filter==='NORMAL_FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED') && r.tech!=='AUTO RENEWAL');
   else if(filter==='AUTO_FAILED') filtered=allData.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED') && r.tech==='AUTO RENEWAL');
+  else if(filter==='PAYMENT_SUCCESS') filtered=allData.filter(r=>r.status==='PAYMENT_SUCCESS');
   else if(filter!=='ALL') filtered=allData.filter(r=>r.tech===filter);
   renderList(filtered);
 }
@@ -552,7 +554,7 @@ function checkVpsExpiry(){
 // Init
 loadData();
 checkVpsExpiry();
-setInterval(()=>{loadData();checkFailedAlert();},30000);
+setInterval(()=>{loadData();checkFailedAlert();},120000);
 </script>
 </body>
 </html>
