@@ -217,7 +217,7 @@ function filterData(filter,btn){
 }
 
 function selectAllFailed(){
-  const failedRows = filtered.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED'));
+  const failedRows = filtered.filter(r=>(r.status||'').startsWith('PAID-RECHARGE FAILED') || r.status==='PAYMENT_SUCCESS');
   failedRows.forEach(r=>{ if(r.order_id) selectedOrders.add(r.order_id); });
   updateBulkBar();
   renderList(filtered);
@@ -307,12 +307,13 @@ function renderList(data){
   document.getElementById('paymentList').innerHTML=data.map(r=>{
     const status=r.status||'INITIATED';
     const isFailed=status.startsWith('PAID-RECHARGE FAILED');
+    const isPaymentSuccess=status==='PAYMENT_SUCCESS';
     const safeOrderId=(r.order_id||'').replace(/'/g,'&#39;');
     const safeCustName=(String(r.customer||'')).replace(/'/g,'&#39;');
     const isSelected = selectedOrders.has(r.order_id||'');
-    const manualBtn=isFailed?('<button class="manual-btn" onclick="markManualRecharge(\''+safeOrderId+'\',\''+safeCustName+'\')">&#x2705; Manual Done</button>'):'';
-    const checkbox=isFailed?`<input type="checkbox" ${isSelected?'checked':''} onclick="toggleSelect('${safeOrderId}')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green);">`:'';
-    return`<div class="payment-item" style="${isFailed?'border-left:3px solid var(--red);':''}${isSelected?'background:rgba(6,214,160,.05);':''}">
+    const manualBtn=(isFailed||isPaymentSuccess)?('<button class="manual-btn" onclick="markManualRecharge(\''+safeOrderId+'\',\''+safeCustName+'\')">&#x2705; Manual Done</button>'):'';
+    const checkbox=(isFailed||isPaymentSuccess)?`<input type="checkbox" ${isSelected?'checked':''} onclick="toggleSelect('${safeOrderId}')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green);">`:'';
+    return`<div class="payment-item" style="${isFailed?'border-left:3px solid var(--red);':isPaymentSuccess?'border-left:3px solid #60a5fa;':''}${isSelected?'background:rgba(6,214,160,.05);':''}">
       <div class="item-top">
         <div style="display:flex;align-items:center;gap:8px;">
           ${checkbox}
