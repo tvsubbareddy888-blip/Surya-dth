@@ -486,6 +486,7 @@ td{padding:7px 9px;white-space:nowrap;}
   <div class="tab" data-tab="excelonly" onclick="setTab('excelonly',this)">⚠️ Excel Only</div>
   <div class="tab" data-tab="webonly" onclick="setTab('webonly',this)">🌐 Web Only</div>
   <div class="tab" data-tab="autorenew" onclick="setTab('autorenew',this)">🔄 Auto Renew</div>
+  <div class="tab" data-tab="pending" onclick="setTab('pending',this)" style="color:#f87171;">⏳ Pending</div>
 </div>
 
 
@@ -3004,6 +3005,7 @@ function applyAll(){
     if(curTabFilter==='expiry30'){const n=daysUntil(d.renewalRaw);if(n===null||n<0||n>30)return false;}
     if(curTabFilter==='excelonly'&&d.synced)return false;
     if(curTabFilter==='autorenew'&&!autoRenewVCs.has(normVC(d.vc)))return false;
+    if(curTabFilter==='pending'&&d.status!=='pending')return false;
     // Multi-tech filter
     if(selectedTechs.size>0&&!selectedTechs.has(d.tech))return false;
     if(isTechView&&techViewName&&!d.tech.toUpperCase().includes(techViewName.toUpperCase())&&!techViewName.toUpperCase().includes(d.tech.toUpperCase()))return false;
@@ -3169,8 +3171,8 @@ function renderDesktopTable(){
   tb.innerHTML=pg.map((d,i)=>{
     const tc=getTechClass(d.tech);
     const ty=`<span style="color:var(--muted);font-size:10px">${d.created||'-'}</span>`;
-    const stCls=d.status==='Active'?'st-active':d.status==='Deactive'?'st-deactive':'st-unknown';
-    const stTxt=d.status==='Active'?'✅ Active':d.status==='Deactive'?'❌ Deactive':d.synced?d.status:'—';
+    const stCls=d.status==='Active'?'st-active':d.status==='Deactive'?'st-deactive':d.status==='pending'?'st-unknown':'st-unknown';
+    const stTxt=d.status==='Active'?'✅ Active':d.status==='Deactive'?'❌ Deactive':d.status==='pending'?'⏳ Pending':d.synced?d.status:'—';
     const rClass=getRenewalClass(d.renewalRaw);
     const coCls=d.company.includes('D2H')?'co-d2h':'co-dish';
     const gi=(curPage-1)*pageSize+i;
@@ -3213,7 +3215,7 @@ function renderMobileCards(){
     const gi=(curPage-1)*pageSize+i;
     const tc=getTechClass(d.tech);
     const mcCls=d.status==='Active'?'mc-active':d.status==='Deactive'?'mc-deactive':'mc-unknown';
-    const stBadge=d.status==='Active'?'<span style="color:var(--green);font-weight:700">✅ Active</span>':d.status==='Deactive'?'<span style="color:var(--red);font-weight:700">❌ Deactive</span>':'<span style="color:var(--muted)">—</span>';
+    const stBadge=d.status==='Active'?'<span style="color:var(--green);font-weight:700">✅ Active</span>':d.status==='Deactive'?'<span style="color:var(--red);font-weight:700">❌ Deactive</span>':d.status==='pending'?'<span style="color:#f87171;font-weight:700">⏳ Pending</span>':'<span style="color:var(--muted)">—</span>';
     const rClass=getRenewalClass(d.renewalRaw);
     const coCls=d.company.includes('D2H')?'co-d2h':'co-dish';
     const days=daysUntil(d.renewalRaw);
@@ -3325,7 +3327,8 @@ function saveAddCustomer(){
   errEl.style.display='none';
   const newRec={
     tech, lcno:'', type:'new', name, vc:vc.replace(/\s/g,''), vcKey:vcKey(vc),
-    mobile, altMobile, company:'DISH TV', village, created, pack, notes, cost, paid:'', balance
+    mobile, altMobile, company:'DISH TV', village, created, pack, notes, cost, paid:'', balance,
+    status:'pending', synced:false
   };
   const exists=myData.findIndex(d=>normVC(d.vc)===normVC(vc));
   if(exists>=0){
@@ -3351,15 +3354,15 @@ function saveAddCustomer(){
 // ── DOWNLOAD UPLOAD FORMAT ──
 function downloadUploadFormat(){
   if(!myData.length){showToast('Data లేదు! ముందు Firebase నుండి load చేయండి',true);return;}
-  const headers=['Technician','LC No','New/Winback','Customer Name','VC Number','Mobile Phone Number','Alternative Mobile','New Box Company','Village','Created On','Pack Name','Notes','Cost Amount','Paid','Balance'];
+  const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2'];
   const rows=myData.map(d=>[
     d.tech||'', d.lcno||'', d.type||'', d.name||'', normVC(d.vc||''),
-    d.mobile||'', d.altMobile||'', d.company||'', d.village||'',
-    d.created||'', d.pack||'', d.notes||'', d.cost||'', d.paid||'', d.balance||''
+    d.mobile||'', d.company||'', d.village||'', d.altMobile||'',
+    d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', ''
   ]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  const colWidths=[15,8,10,20,14,16,16,15,14,12,20,20,10,8,8];
+  const colWidths=[15,8,10,20,14,16,15,14,16,12,14,20,20,12,10,10,8,8,10];
   ws['!cols']=colWidths.map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Customers');
   const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
