@@ -3336,8 +3336,15 @@ function saveAddCustomer(){
     myData.push(newRec);
     showToast('✅ Customer added: '+name);
   }
+  pushToFirebase();
   updateDot(1,true,'Excel: '+myData.length+' records ✓');
   closeAddCustomer();
+  // All tab కి reset చేయి — filter వల్ల కనిపించకపోకుండా
+  curTabFilter='all';
+  curPage=1;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const allTab=document.querySelector('.tab[data-tab="all"]');
+  if(allTab) allTab.classList.add('active');
   applyAll();
 }
 
