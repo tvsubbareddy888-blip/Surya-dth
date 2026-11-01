@@ -3265,7 +3265,7 @@ function renderDesktopTable(){
 <td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}</td>
 <td class="amt">${d.cost?'₹'+d.cost:'-'}</td>
 <td style="display:flex;gap:4px;">${mob?`<button class="twa" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 WA</button>`:''}<button class="twa" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);font-size:10px;" onclick="openCustPctModal(filtered[${gi}])">%</button><button class="twa" style="background:rgba(245,158,11,.1);color:var(--accent);border-color:rgba(245,158,11,.25);" onclick="openQRModal(filtered[${gi}])">QR</button></td>
-<td style="display:none;" class="edit-col"><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
+<td class="edit-col" style="${crmRole?'':'display:none'}"><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
 </tr>`;
   }).join('');
   renderPag('pag',tot);
@@ -3312,7 +3312,7 @@ function renderMobileCards(){
     ${mob?`<button class="wa-btn ${waType==='renewal'?'renewal':''}" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 ${waType==='renewal'?'Renewal Reminder':waType==='deactive'?'Deactive Alert':'WhatsApp'}</button>`:''}
     ${mob?`<button class="call-btn" onclick="window.location='tel:${d.mobile}'">📞 Call</button>`:''}
     <button class="call-btn" style="background:rgba(245,158,11,.12);color:var(--accent);border-color:rgba(245,158,11,.3);" onclick="openQRModal(filtered[${gi}])">📲 QR</button>
-    <button class="mc-edit-btn" onclick="openEditCustomer(${gi})" style="display:none;background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Edit</button>
+    <button class="mc-edit-btn" onclick="openEditCustomer(${gi})" style="${crmRole?'':'display:none;'}background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Edit</button>
     ${!mob?'<span style="color:var(--muted);font-size:11px">Mobile లేదు</span>':''}
   </div>
 </div>`;
