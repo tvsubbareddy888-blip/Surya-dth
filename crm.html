@@ -519,6 +519,7 @@ td{padding:7px 9px;white-space:nowrap;}
   <button class="fbtn" onclick="startPackSync()" style="background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 Pack Sync</button>
   <button class="fbtn" onclick="openAddCustomer()" style="background:rgba(245,158,11,.2);color:var(--accent);border-color:rgba(245,158,11,.4);font-weight:800;">➕ Add</button>
   <button class="fbtn" onclick="downloadUploadFormat()" style="background:rgba(139,92,246,.15);color:var(--purple);border-color:rgba(139,92,246,.3)">📥 Download</button>
+  <span id="roleBadge" style="font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;border:1px solid rgba(245,158,11,.3);cursor:pointer;" onclick="logoutCRM()" title="Click to logout"></span>
 </div>
 
 <!-- TABLE desktop -->
@@ -611,6 +612,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th onclick="srt('systemPack')">System Pack ↕</th>
           <th onclick="srt('cost')">Amount ↕</th>
           <th>WA</th>
+          <th id="editColHeader" style="display:none;">✏️</th>
         </tr>
       </thead>
       <tbody id="tb">
@@ -630,6 +632,78 @@ td{padding:7px 9px;white-space:nowrap;}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-bg" id="loginModal" style="display:flex;align-items:center;justify-content:center;z-index:9999;">
+  <div class="modal" style="max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;">🔐</div>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;">Surya DTH CRM</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Login చేయండి</div>
+    <input type="password" id="loginPassInp" class="pack-inp" style="text-align:center;font-size:16px;letter-spacing:4px;margin-bottom:12px;" placeholder="Password నమోదు చేయండి" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()" style="background:linear-gradient(135deg,rgba(245,158,11,.3),rgba(245,158,11,.1));color:var(--accent);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:10px 24px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-bottom:8px;">🔑 Login</button>
+    <div id="loginErr" style="font-size:12px;color:#f87171;min-height:16px;"></div>
+  </div>
+</div>
+
+<!-- EDIT CUSTOMER MODAL -->
+<div class="modal-bg" id="editCustModal" style="display:none;align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:15px;font-weight:800;">✏️ Edit Customer</h3>
+      <button onclick="closeEditCustomer()" style="background:var(--card2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>
+    </div>
+    <input type="hidden" id="ec_idx">
+    <div style="display:grid;gap:10px;">
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Tech</label>
+        <input type="text" id="ec_tech" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Technician">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Customer Name *</label>
+        <input type="text" id="ec_name" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="పేరు">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">VC Number *</label>
+        <input type="text" id="ec_vc" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="VC Number">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Mobile</label>
+        <input type="text" id="ec_mobile" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Mobile Number">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Alt Mobile</label>
+        <input type="text" id="ec_altMobile" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Alternative Mobile">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Village</label>
+        <input type="text" id="ec_village" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Village">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Pack</label>
+        <input type="text" id="ec_pack" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Pack Name">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <label style="font-size:11px;color:var(--muted);">Amount (₹)</label>
+          <input type="number" id="ec_cost" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="0">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);">Balance (₹)</label>
+          <input type="number" id="ec_balance" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="0">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);">Notes</label>
+        <input type="text" id="ec_notes" class="pack-inp" style="text-align:left;font-size:13px;" placeholder="Notes">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button onclick="saveEditCustomer()" style="flex:1;background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:10px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:800;cursor:pointer;">💾 Save</button>
+      <button id="ec_deleteBtn" onclick="deleteCustomer()" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 16px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:800;cursor:pointer;">🗑️</button>
+      <button onclick="closeEditCustomer()" style="background:var(--card2);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+</div>
 
 <!-- ADD CUSTOMER MODAL -->
 <div class="modal-bg" id="addCustModal" style="display:none;align-items:center;justify-content:center;">
@@ -965,6 +1039,19 @@ td{padding:7px 9px;white-space:nowrap;}
         <input type="password" id="cfSecKey" class="pack-inp" style="text-align:left;margin-bottom:6px;font-size:12px;" placeholder="Secret Key">
         <button onclick="saveCFCreds()" style="background:rgba(139,92,246,.2);color:var(--purple);border:1px solid rgba(139,92,246,.3);border-radius:7px;padding:8px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:100%;">💾 Save Cashfree Credentials</button>
         <div id="cfCredsStatus" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;"></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;">🔐 CRM Login Passwords</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <label style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:80px;">Admin Pass</label>
+          <input type="password" id="adminPassInp" class="pack-inp" style="text-align:left;font-size:12px;" placeholder="Admin Password">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <label style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:80px;">Tech Pass</label>
+          <input type="password" id="techPassInp" class="pack-inp" style="text-align:left;font-size:12px;" placeholder="Tech Password">
+        </div>
+        <button onclick="saveCRMPasswords()" style="background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:8px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:100%;">💾 Save CRM Passwords</button>
+        <div id="crmPassStatus" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;"></div>
       </div>
     </div>
   </div>
@@ -2269,10 +2356,26 @@ function printQR(){
 }
 
 // ── PACK SETTINGS ──
+function logoutCRM(){
+  if(!confirm('Logout చేస్తారా?'))return;
+  crmRole=null;
+  sessionStorage.removeItem('crm_role');
+  // Hide edit buttons
+  document.getElementById('editColHeader').style.display='none';
+  document.querySelectorAll('.edit-col').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='none');
+  document.getElementById('roleBadge').textContent='';
+  document.getElementById('loginPassInp').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginModal').style.display='flex';
+  showToast('👋 Logout అయ్యారు');
+}
+
 function openPackModal(){
+  const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
   const pin=prompt('🔒 Owner PIN enter చేయండి:');
   if(pin===null) return;
-  if(pin!=='103599'){
+  if(pin!==adminPass){
     showToast('❌ Wrong PIN! Access Denied',true);
     return;
   }
@@ -2367,6 +2470,158 @@ function saveCFCreds(){
   document.getElementById('cfCredsStatus').textContent='✅ Saved!';
   document.getElementById('cfCredsStatus').style.color='var(--green)';
   showToast('✅ Cashfree credentials saved!');
+}
+
+function saveCRMPasswords(){
+  const ap=document.getElementById('adminPassInp').value.trim();
+  const tp=document.getElementById('techPassInp').value.trim();
+  if(!ap&&!tp){showToast('Password enter చేయండి!',true);return;}
+  if(ap) localStorage.setItem('crm_admin_pass',ap);
+  if(tp) localStorage.setItem('crm_tech_pass',tp);
+  document.getElementById('crmPassStatus').textContent='✅ Passwords saved!';
+  document.getElementById('crmPassStatus').style.color='var(--green)';
+  document.getElementById('adminPassInp').value='';
+  document.getElementById('techPassInp').value='';
+  showToast('✅ CRM Passwords saved!');
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN SYSTEM
+// ══════════════════════════════════════════════════════
+let crmRole = null; // 'admin' or 'tech' or null
+
+function initLogin(){
+  // Default passwords if not set
+  if(!localStorage.getItem('crm_admin_pass')) localStorage.setItem('crm_admin_pass','103599');
+  if(!localStorage.getItem('crm_tech_pass')) localStorage.setItem('crm_tech_pass','1234');
+  // Check if already logged in this session
+  const sess = sessionStorage.getItem('crm_role');
+  if(sess==='admin'||sess==='tech'){
+    crmRole=sess;
+    document.getElementById('loginModal').style.display='none';
+    applyRoleUI();
+  } else {
+    document.getElementById('loginModal').style.display='flex';
+  }
+}
+
+function doLogin(){
+  const inp=document.getElementById('loginPassInp').value;
+  const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
+  const techPass=localStorage.getItem('crm_tech_pass')||'1234';
+  if(inp===adminPass){
+    crmRole='admin';
+    sessionStorage.setItem('crm_role','admin');
+    document.getElementById('loginModal').style.display='none';
+    document.getElementById('loginPassInp').value='';
+    document.getElementById('loginErr').textContent='';
+    applyRoleUI();
+    showToast('✅ Admin గా Login అయ్యారు!');
+  } else if(inp===techPass){
+    crmRole='tech';
+    sessionStorage.setItem('crm_role','tech');
+    document.getElementById('loginModal').style.display='none';
+    document.getElementById('loginPassInp').value='';
+    document.getElementById('loginErr').textContent='';
+    applyRoleUI();
+    // Ask tech name for auto-fill in Add form
+    const techName=prompt('మీ పేరు enter చేయండి (Add form లో auto-fill అవుతుంది):');
+    if(techName&&techName.trim()) sessionStorage.setItem('crm_tech_name',techName.trim());
+    showToast('✅ Technician గా Login అయ్యారు!');
+  } else {
+    document.getElementById('loginErr').textContent='❌ తప్పు password! మళ్ళీ try చేయండి.';
+    document.getElementById('loginPassInp').value='';
+    document.getElementById('loginPassInp').focus();
+  }
+}
+
+function applyRoleUI(){
+  // Show edit column header
+  const hdr=document.getElementById('editColHeader');
+  if(hdr) hdr.style.display='';
+  // Show edit col cells
+  document.querySelectorAll('.edit-col').forEach(el=>el.style.display='');
+  // Show mobile edit buttons
+  document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='');
+  // Show role badge
+  updateRoleBadge();
+}
+
+function updateRoleBadge(){
+  const badge=document.getElementById('roleBadge');
+  if(badge){
+    if(crmRole==='admin') { badge.textContent='👑 Admin'; badge.style.color='var(--accent)'; }
+    else if(crmRole==='tech') { badge.textContent='🔧 Tech'; badge.style.color='var(--green)'; }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// EDIT / DELETE CUSTOMER
+// ══════════════════════════════════════════════════════
+function openEditCustomer(gi){
+  if(!crmRole){showToast('Login చేయండి!',true);return;}
+  const d=filtered[gi];
+  if(!d){showToast('Record కనుగొనబడలేదు!',true);return;}
+  // Find index in myData
+  const idx=myData.findIndex(r=>r.vcKey===d.vcKey);
+  document.getElementById('ec_idx').value=idx;
+  // Fill fields
+  const isAdmin=crmRole==='admin';
+  const fields=['tech','name','vc','mobile','altMobile','village','pack','cost','balance','notes'];
+  fields.forEach(f=>{
+    const el=document.getElementById('ec_'+f);
+    if(el){
+      el.value=d[f]||'';
+      if(f==='altMobile') el.readOnly=false; // always editable
+      else el.readOnly=!isAdmin;
+      el.style.opacity=(!isAdmin&&f!=='altMobile')?'0.5':'1';
+      el.style.background=(!isAdmin&&f!=='altMobile')?'rgba(255,255,255,.03)':'';
+    }
+  });
+  // Delete button — admin only
+  const delBtn=document.getElementById('ec_deleteBtn');
+  if(delBtn) delBtn.style.display=isAdmin?'':'none';
+  document.getElementById('editCustModal').style.display='flex';
+}
+
+function closeEditCustomer(){
+  document.getElementById('editCustModal').style.display='none';
+}
+
+function saveEditCustomer(){
+  if(!crmRole){showToast('Login చేయండి!',true);return;}
+  const idx=parseInt(document.getElementById('ec_idx').value);
+  if(isNaN(idx)||idx<0||idx>=myData.length){showToast('Record కనుగొనబడలేదు!',true);return;}
+  const isAdmin=crmRole==='admin';
+  if(isAdmin){
+    const fields=['tech','name','vc','mobile','altMobile','village','pack','cost','balance','notes'];
+    fields.forEach(f=>{
+      const el=document.getElementById('ec_'+f);
+      if(el) myData[idx][f]=el.value.trim();
+    });
+    // Update vcKey if vc changed
+    myData[idx].vcKey=vcKey(myData[idx].vc);
+  } else {
+    // Tech: only altMobile
+    myData[idx].altMobile=document.getElementById('ec_altMobile').value.trim();
+  }
+  pushToFirebase();
+  closeEditCustomer();
+  applyAll();
+  showToast('✅ Record update అయింది!');
+}
+
+function deleteCustomer(){
+  if(crmRole!=='admin'){showToast('Admin మాత్రమే delete చేయగలరు!',true);return;}
+  const idx=parseInt(document.getElementById('ec_idx').value);
+  if(isNaN(idx)||idx<0||idx>=myData.length){return;}
+  const rec=myData[idx];
+  if(!confirm(`${rec.name} (${rec.vc}) ని delete చేస్తారా?`))return;
+  myData.splice(idx,1);
+  pushToFirebase();
+  closeEditCustomer();
+  applyAll();
+  showToast('🗑️ Record delete అయింది!');
 }
 
 function loadCFCreds(){
@@ -2980,6 +3235,12 @@ function render(){
   // chkAll state sync
   const chkAll=document.getElementById('chkAll');
   if(chkAll) chkAll.checked=filtered.length>0&&filtered.every(d=>selectedVCs.has(d.vcKey));
+  // Show edit buttons if logged in
+  if(crmRole){
+    document.getElementById('editColHeader').style.display='';
+    document.querySelectorAll('.edit-col').forEach(el=>el.style.display='');
+    document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='');
+  }
 }
 
 function renderDesktopTable(){
@@ -3019,6 +3280,7 @@ function renderDesktopTable(){
 <td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}</td>
 <td class="amt">${d.cost?'₹'+d.cost:'-'}</td>
 <td style="display:flex;gap:4px;">${mob?`<button class="twa" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 WA</button>`:''}<button class="twa" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);font-size:10px;" onclick="openCustPctModal(filtered[${gi}])">%</button><button class="twa" style="background:rgba(245,158,11,.1);color:var(--accent);border-color:rgba(245,158,11,.25);" onclick="openQRModal(filtered[${gi}])">QR</button></td>
+<td style="display:none;" class="edit-col"><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
 </tr>`;
   }).join('');
   renderPag('pag',tot);
@@ -3065,7 +3327,7 @@ function renderMobileCards(){
     ${mob?`<button class="wa-btn ${waType==='renewal'?'renewal':''}" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 ${waType==='renewal'?'Renewal Reminder':waType==='deactive'?'Deactive Alert':'WhatsApp'}</button>`:''}
     ${mob?`<button class="call-btn" onclick="window.location='tel:${d.mobile}'">📞 Call</button>`:''}
     <button class="call-btn" style="background:rgba(245,158,11,.12);color:var(--accent);border-color:rgba(245,158,11,.3);" onclick="openQRModal(filtered[${gi}])">📲 QR</button>
-    
+    <button class="mc-edit-btn" onclick="openEditCustomer(${gi})" style="display:none;background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Edit</button>
     ${!mob?'<span style="color:var(--muted);font-size:11px">Mobile లేదు</span>':''}
   </div>
 </div>`;
@@ -3105,6 +3367,14 @@ function openAddCustomer(){
   const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='➕ కొత్త Technician Add చేయండి';techSel.appendChild(newOpt);
   document.getElementById('ac_tech_new_row').style.display='none';
   document.getElementById('ac_tech_new').value='';
+  // Auto-fill tech name if logged in as tech
+  if(crmRole==='tech'){
+    const loggedTech=sessionStorage.getItem('crm_tech_name')||'';
+    if(loggedTech&&techs.includes(loggedTech)) techSel.value=loggedTech;
+    techSel.disabled=true; // tech cannot change their own name
+  } else {
+    techSel.disabled=false;
+  }
   // Populate pack dropdown
   const packSel=document.getElementById('ac_pack');
   const packs=[...new Set(myData.map(d=>d.pack||'').filter(p=>p))].sort();
@@ -3342,6 +3612,7 @@ loadAutoRenew();
 loadPackDetails();
 loadRenewalDates();
 loadPercentages();
+initLogin();
 // Auto Renew Firebase నుండి load చేయి
 window.addEventListener('load', ()=>{
   setTimeout(loadAutoRenew, 1000);
