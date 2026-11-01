@@ -519,7 +519,6 @@ td{padding:7px 9px;white-space:nowrap;}
   <button class="fbtn" onclick="startPackSync()" style="background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 Pack Sync</button>
   <button class="fbtn" onclick="openAddCustomer()" style="background:rgba(245,158,11,.2);color:var(--accent);border-color:rgba(245,158,11,.4);font-weight:800;">➕ Add</button>
   <button class="fbtn" onclick="downloadUploadFormat()" style="background:rgba(139,92,246,.15);color:var(--purple);border-color:rgba(139,92,246,.3)">📥 Download</button>
-  <span id="roleBadge" style="font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;border:1px solid rgba(245,158,11,.3);cursor:pointer;" onclick="logoutCRM()" title="Click to logout"></span>
 </div>
 
 <!-- TABLE desktop -->
@@ -612,7 +611,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th onclick="srt('systemPack')">System Pack ↕</th>
           <th onclick="srt('cost')">Amount ↕</th>
           <th>WA</th>
-          <th id="editColHeader" style="display:none;">✏️</th>
+          <th>✏️</th>
         </tr>
       </thead>
       <tbody id="tb">
@@ -2344,21 +2343,6 @@ function printQR(){
 }
 
 // ── PACK SETTINGS ──
-function logoutCRM(){
-  if(!confirm('Logout చేస్తారా?'))return;
-  crmRole=null;
-  localStorage.removeItem('crm_role');
-  localStorage.removeItem('crm_tech_name');
-  // Hide edit buttons
-  const hdr=document.getElementById('editColHeader');
-  if(hdr) hdr.style.display='none';
-  document.querySelectorAll('.edit-col').forEach(el=>el.style.display='none');
-  document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='none');
-  const badge=document.getElementById('roleBadge');
-  if(badge) badge.textContent='';
-  showToast('👋 Logout అయ్యారు');
-}
-
 function openPackModal(){
   const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
   const pin=prompt('🔒 Owner PIN enter చేయండి:');
@@ -2474,75 +2458,27 @@ function saveCRMPasswords(){
 }
 
 // ══════════════════════════════════════════════════════
-// LOGIN SYSTEM (Edit button నొక్కినప్పుడు మాత్రమే)
+// EDIT PASSWORD CHECK
 // ══════════════════════════════════════════════════════
-let crmRole = null; // 'admin' or 'tech' or null
+let crmRole = null; // 'admin' or 'tech'
 
 function initLogin(){
-  // Default passwords if not set
   if(!localStorage.getItem('crm_admin_pass')) localStorage.setItem('crm_admin_pass','103599');
   if(!localStorage.getItem('crm_tech_pass')) localStorage.setItem('crm_tech_pass','1234');
-  // Check localStorage — persistent across browser sessions
-  const saved = localStorage.getItem('crm_role');
-  if(saved==='admin'||saved==='tech'){
-    crmRole=saved;
-    applyRoleUI();
-  }
-  // No login modal on open — CRM directly shows
-}
-
-function askLoginForEdit(callback){
-  // Already logged in (persistent)
-  if(crmRole){ callback(); return; }
-  const inp=prompt('🔐 Password enter చేయండి:\n(Admin లేదా Tech password)');
-  if(inp===null) return;
-  const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
-  const techPass=localStorage.getItem('crm_tech_pass')||'1234';
-  if(inp===adminPass){
-    crmRole='admin';
-    localStorage.setItem('crm_role','admin'); // persistent
-    applyRoleUI();
-    showToast('✅ Admin గా Login అయ్యారు!');
-    callback();
-  } else if(inp===techPass){
-    crmRole='tech';
-    localStorage.setItem('crm_role','tech'); // persistent
-    const techName=prompt('మీ పేరు enter చేయండి:');
-    if(techName&&techName.trim()) localStorage.setItem('crm_tech_name',techName.trim());
-    applyRoleUI();
-    showToast('✅ Technician గా Login అయ్యారు!');
-    callback();
-  } else {
-    showToast('❌ తప్పు password!',true);
-  }
-}
-
-function applyRoleUI(){
-  // Show edit column header
-  const hdr=document.getElementById('editColHeader');
-  if(hdr) hdr.style.display='';
-  // Show edit col cells
-  document.querySelectorAll('.edit-col').forEach(el=>el.style.display='');
-  // Show mobile edit buttons
-  document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='');
-  // Update role badge
-  updateRoleBadge();
-}
-
-function updateRoleBadge(){
-  const badge=document.getElementById('roleBadge');
-  if(badge){
-    if(crmRole==='admin') { badge.textContent='👑 Admin'; badge.style.color='var(--accent)'; }
-    else if(crmRole==='tech') { badge.textContent='🔧 Tech'; badge.style.color='var(--green)'; }
-    else { badge.textContent=''; }
-  }
 }
 
 // ══════════════════════════════════════════════════════
 // EDIT / DELETE CUSTOMER
 // ══════════════════════════════════════════════════════
 function openEditCustomer(gi){
-  askLoginForEdit(()=>_openEditCustomer(gi));
+  const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
+  const techPass=localStorage.getItem('crm_tech_pass')||'1234';
+  const inp=prompt('🔐 Password enter చేయండి:');
+  if(inp===null) return;
+  if(inp===adminPass) crmRole='admin';
+  else if(inp===techPass) crmRole='tech';
+  else { showToast('❌ తప్పు password!',true); return; }
+  _openEditCustomer(gi);
 }
 function _openEditCustomer(gi){
   const d=filtered[gi];
@@ -3220,12 +3156,6 @@ function render(){
   // chkAll state sync
   const chkAll=document.getElementById('chkAll');
   if(chkAll) chkAll.checked=filtered.length>0&&filtered.every(d=>selectedVCs.has(d.vcKey));
-  // Show edit buttons if logged in
-  if(crmRole){
-    document.getElementById('editColHeader').style.display='';
-    document.querySelectorAll('.edit-col').forEach(el=>el.style.display='');
-    document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='');
-  }
 }
 
 function renderDesktopTable(){
@@ -3265,7 +3195,7 @@ function renderDesktopTable(){
 <td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}</td>
 <td class="amt">${d.cost?'₹'+d.cost:'-'}</td>
 <td style="display:flex;gap:4px;">${mob?`<button class="twa" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 WA</button>`:''}<button class="twa" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);font-size:10px;" onclick="openCustPctModal(filtered[${gi}])">%</button><button class="twa" style="background:rgba(245,158,11,.1);color:var(--accent);border-color:rgba(245,158,11,.25);" onclick="openQRModal(filtered[${gi}])">QR</button></td>
-<td class="edit-col" style="${crmRole?'':'display:none'}"><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
+<td><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
 </tr>`;
   }).join('');
   renderPag('pag',tot);
@@ -3312,7 +3242,7 @@ function renderMobileCards(){
     ${mob?`<button class="wa-btn ${waType==='renewal'?'renewal':''}" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 ${waType==='renewal'?'Renewal Reminder':waType==='deactive'?'Deactive Alert':'WhatsApp'}</button>`:''}
     ${mob?`<button class="call-btn" onclick="window.location='tel:${d.mobile}'">📞 Call</button>`:''}
     <button class="call-btn" style="background:rgba(245,158,11,.12);color:var(--accent);border-color:rgba(245,158,11,.3);" onclick="openQRModal(filtered[${gi}])">📲 QR</button>
-    <button class="mc-edit-btn" onclick="openEditCustomer(${gi})" style="${crmRole?'':'display:none;'}background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Edit</button>
+    <button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Edit</button>
     ${!mob?'<span style="color:var(--muted);font-size:11px">Mobile లేదు</span>':''}
   </div>
 </div>`;
