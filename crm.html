@@ -596,7 +596,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th><input type="checkbox" class="row-chk" id="chkAll" onclick="chkAllToggle(this)" title="అన్నీ"></th>
           <th>🔄</th>
           <th onclick="srt('tech')">Tech ↕</th>
-          <th onclick="srt('type')">Type</th>
+          <th onclick="srt('created')">Created ↕</th>
           <th onclick="srt('name')">Name ↕</th>
           <th onclick="srt('vc')">VC ↕</th>
           <th onclick="srt('status')">Status ↕</th>
@@ -2919,7 +2919,7 @@ function renderDesktopTable(){
   const pg=filtered.slice((curPage-1)*pageSize,curPage*pageSize);
   tb.innerHTML=pg.map((d,i)=>{
     const tc=getTechClass(d.tech);
-    const ty=d.type==='new'?'<span class="ty-new">NEW</span>':d.type==='wb'?'<span class="ty-wb">WB</span>':`<span style="color:var(--muted);font-size:10px">${d.type||'-'}</span>`;
+    const ty=`<span style="color:var(--muted);font-size:10px">${d.created||'-'}</span>`;
     const stCls=d.status==='Active'?'st-active':d.status==='Deactive'?'st-deactive':'st-unknown';
     const stTxt=d.status==='Active'?'✅ Active':d.status==='Deactive'?'❌ Deactive':d.synced?d.status:'—';
     const rClass=getRenewalClass(d.renewalRaw);
@@ -3015,7 +3015,7 @@ function goPg(p){curPage=p;render();window.scrollTo({top:0,behavior:'smooth'});}
 function exportCSV(){
   if(!filtered.length){showToast('Data లేదు!',true);return;}
   const hdrs=['Tech','Type','Name','VC','Status','Renewal','Mobile','Company','Village','Pack','Amount'];
-  const rows=filtered.map(d=>[d.tech,d.type,d.name,d.vc,d.status,d.renewal,d.mobile,d.company,d.village,d.pack,d.cost]);
+  const rows=filtered.map(d=>[d.tech,d.created,d.name,d.vc,d.status,d.renewal,d.mobile,d.company,d.village,d.pack,d.cost]);
   const csv=[hdrs,...rows].map(r=>r.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
