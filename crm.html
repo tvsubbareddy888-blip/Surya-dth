@@ -639,7 +639,12 @@ td{padding:7px 9px;white-space:nowrap;}
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Technician *</div>
-        <input id="ac_tech" type="text" placeholder="Tech పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <select id="ac_tech" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;cursor:pointer;" onchange="acTechChange(this)">
+          <option value="">-- Tech select చేయండి --</option>
+        </select>
+        <div id="ac_tech_new_row" style="display:none;margin-top:6px;">
+          <input id="ac_tech_new" type="text" placeholder="కొత్త Technician పేరు enter చేయండి" style="width:100%;background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;">
+        </div>
       </div>
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Customer పేరు *</div>
@@ -665,7 +670,9 @@ td{padding:7px 9px;white-space:nowrap;}
       </div>
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Pack Name</div>
-        <input id="ac_pack" type="text" placeholder="Pack పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <select id="ac_pack" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;cursor:pointer;">
+          <option value="">-- Pack select చేయండి --</option>
+        </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
@@ -3087,18 +3094,35 @@ function openAddCustomer(){
   const mm=String(today.getMonth()+1).padStart(2,'0');
   const yy=String(today.getFullYear()).slice(-2);
   document.getElementById('ac_created').value=dd+'/'+mm+'/'+yy;
-  ['ac_tech','ac_name','ac_vc','ac_mobile','ac_altMobile','ac_village','ac_pack','ac_cost','ac_balance','ac_notes'].forEach(id=>{
+  ['ac_name','ac_vc','ac_mobile','ac_altMobile','ac_village','ac_cost','ac_balance','ac_notes'].forEach(id=>{
     document.getElementById(id).value='';
   });
+  // Populate tech dropdown
+  const techSel=document.getElementById('ac_tech');
+  const techs=[...new Set(myData.map(d=>d.tech||'').filter(t=>t))].sort();
+  techSel.innerHTML='<option value="">-- Tech select చేయండి --</option>';
+  techs.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;techSel.appendChild(o);});
+  const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='➕ కొత్త Technician Add చేయండి';techSel.appendChild(newOpt);
+  document.getElementById('ac_tech_new_row').style.display='none';
+  document.getElementById('ac_tech_new').value='';
+  // Populate pack dropdown
+  const packSel=document.getElementById('ac_pack');
+  const packs=[...new Set(myData.map(d=>d.pack||'').filter(p=>p))].sort();
+  packSel.innerHTML='<option value="">-- Pack select చేయండి --</option>';
+  packs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;packSel.appendChild(o);});
   document.getElementById('ac_error').style.display='none';
-  const m=document.getElementById('addCustModal');
-  m.style.display='flex';
+  document.getElementById('addCustModal').style.display='flex';
+}
+function acTechChange(sel){
+  const newRow=document.getElementById('ac_tech_new_row');
+  newRow.style.display=sel.value==='__new__'?'block':'none';
 }
 function closeAddCustomer(){
   document.getElementById('addCustModal').style.display='none';
 }
 function saveAddCustomer(){
-  const tech=document.getElementById('ac_tech').value.trim();
+  const techSel=document.getElementById('ac_tech');
+  const tech=techSel.value==='__new__'?document.getElementById('ac_tech_new').value.trim():techSel.value.trim();
   const name=document.getElementById('ac_name').value.trim();
   const vc=document.getElementById('ac_vc').value.trim();
   const mobile=document.getElementById('ac_mobile').value.trim();
