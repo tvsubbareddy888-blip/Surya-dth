@@ -3325,7 +3325,7 @@ function saveAddCustomer(){
   errEl.style.display='none';
   const newRec={
     tech, lcno:'', type:'new', name, vc:vc.replace(/\s/g,''), vcKey:vcKey(vc),
-    mobile, altMobile, company:'', village, created, pack, notes, cost, paid:'', balance
+    mobile, altMobile, company:'DISH TV', village, created, pack, notes, cost, paid:'', balance
   };
   const exists=myData.findIndex(d=>normVC(d.vc)===normVC(vc));
   if(exists>=0){
