@@ -517,6 +517,8 @@ td{padding:7px 9px;white-space:nowrap;}
   <button class="fbtn" onclick="sendBulkWA()" style="background:rgba(37,211,102,.1);color:var(--wa);border-color:rgba(37,211,102,.3)">📲 WA</button>
   <button class="fbtn" onclick="openSmsModal()" style="background:rgba(59,130,246,.1);color:var(--accent2);border-color:rgba(59,130,246,.3)">📱 SMS</button>
   <button class="fbtn" onclick="startPackSync()" style="background:rgba(16,185,129,.1);color:var(--green);border-color:rgba(16,185,129,.3)">🔄 Pack Sync</button>
+  <button class="fbtn" onclick="openAddCustomer()" style="background:rgba(245,158,11,.2);color:var(--accent);border-color:rgba(245,158,11,.4);font-weight:800;">➕ Add</button>
+  <button class="fbtn" onclick="downloadUploadFormat()" style="background:rgba(139,92,246,.15);color:var(--purple);border-color:rgba(139,92,246,.3)">📥 Download</button>
 </div>
 
 <!-- TABLE desktop -->
@@ -602,6 +604,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th onclick="srt('status')">Status ↕</th>
           <th onclick="srt('renewal')">Renewal ↕</th>
           <th onclick="srt('mobile')">Mobile ↕</th>
+          <th onclick="srt('altMobile')">Alt Mobile ↕</th>
           <th onclick="srt('company')">Co ↕</th>
           <th onclick="srt('village')">Village ↕</th>
           <th onclick="srt('pack')">Pack ↕</th>
@@ -627,6 +630,69 @@ td{padding:7px 9px;white-space:nowrap;}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ADD CUSTOMER MODAL -->
+<div class="modal-bg" id="addCustModal" style="display:none;align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;">
+    <h3 style="color:var(--accent);margin-bottom:4px;">➕ కొత్త Customer Add చేయండి</h3>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">అన్ని వివరాలు enter చేసి Save నొక్కండి</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Technician *</div>
+        <input id="ac_tech" type="text" placeholder="Tech పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Customer పేరు *</div>
+        <input id="ac_name" type="text" placeholder="పూర్తి పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">VC Number *</div>
+        <input id="ac_vc" type="text" placeholder="VC Number" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Mobile</div>
+          <input id="ac_mobile" type="tel" placeholder="Mobile Number" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Alt Mobile</div>
+          <input id="ac_altMobile" type="tel" placeholder="Alt Mobile" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Village / Area</div>
+        <input id="ac_village" type="text" placeholder="Village పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Pack Name</div>
+        <input id="ac_pack" type="text" placeholder="Pack పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Amount (₹)</div>
+          <input id="ac_cost" type="number" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Balance (₹)</div>
+          <input id="ac_balance" type="number" placeholder="0" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Notes</div>
+        <input id="ac_notes" type="text" placeholder="Notes (optional)" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Created Date (auto)</div>
+        <input id="ac_created" type="text" readonly style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;">
+      </div>
+    </div>
+    <div id="ac_error" style="color:var(--red);font-size:12px;margin-top:8px;display:none;"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button onclick="saveAddCustomer()" style="flex:1;padding:11px;border-radius:9px;border:none;background:var(--accent);color:#000;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">💾 Save చేయండి</button>
+      <button onclick="closeAddCustomer()" style="padding:11px 16px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:14px;cursor:pointer;">✕ Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- WA MODAL -->
 <div class="modal-bg" id="waModal">
@@ -2939,6 +3005,7 @@ function renderDesktopTable(){
 <td class="${stCls}">${stTxt}</td>
 <td class="${rClass}">${d.renewal||'—'}</td>
 <td class="mob">${d.mobile||'-'}</td>
+<td class="mob">${d.altMobile||'-'}</td>
 <td><span class="${coCls}">${d.company||'-'}</span></td>
 <td style="font-size:12px">${d.village||'-'}</td>
 <td class="pack" title="${d.pack}">${d.pack||'-'}</td>
@@ -2983,6 +3050,7 @@ function renderMobileCards(){
   </div>
   <div class="mc-row">
     <div class="mc-field"><div class="mc-label">Mobile</div><div class="mc-value mob">${d.mobile||'-'}</div></div>
+    <div class="mc-field"><div class="mc-label">Alt Mobile</div><div class="mc-value mob">${d.altMobile||'-'}</div></div>
     <div class="mc-field"><div class="mc-label">Pack</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.pack?d.pack.substring(0,18)+(d.pack.length>18?'…':''):'-'}</div></div>
     <div class="mc-field"><div class="mc-label">Created</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.created||'-'}</div></div>
   </div>
@@ -3012,6 +3080,77 @@ function renderPag(id,tot){
 function goPg(p){curPage=p;render();window.scrollTo({top:0,behavior:'smooth'});}
 
 // EXPORT
+// ── ADD CUSTOMER ──
+function openAddCustomer(){
+  const today=new Date();
+  const dd=String(today.getDate()).padStart(2,'0');
+  const mm=String(today.getMonth()+1).padStart(2,'0');
+  const yy=String(today.getFullYear()).slice(-2);
+  document.getElementById('ac_created').value=dd+'/'+mm+'/'+yy;
+  ['ac_tech','ac_name','ac_vc','ac_mobile','ac_altMobile','ac_village','ac_pack','ac_cost','ac_balance','ac_notes'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('ac_error').style.display='none';
+  const m=document.getElementById('addCustModal');
+  m.style.display='flex';
+}
+function closeAddCustomer(){
+  document.getElementById('addCustModal').style.display='none';
+}
+function saveAddCustomer(){
+  const tech=document.getElementById('ac_tech').value.trim();
+  const name=document.getElementById('ac_name').value.trim();
+  const vc=document.getElementById('ac_vc').value.trim();
+  const mobile=document.getElementById('ac_mobile').value.trim();
+  const altMobile=document.getElementById('ac_altMobile').value.trim();
+  const village=document.getElementById('ac_village').value.trim();
+  const pack=document.getElementById('ac_pack').value.trim();
+  const cost=document.getElementById('ac_cost').value.trim();
+  const balance=document.getElementById('ac_balance').value.trim();
+  const notes=document.getElementById('ac_notes').value.trim();
+  const created=document.getElementById('ac_created').value.trim();
+  const errEl=document.getElementById('ac_error');
+  if(!tech){errEl.textContent='Technician పేరు అవసరం!';errEl.style.display='block';return;}
+  if(!name){errEl.textContent='Customer పేరు అవసరం!';errEl.style.display='block';return;}
+  if(!vc){errEl.textContent='VC Number అవసరం!';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  const newRec={
+    tech, lcno:'', type:'new', name, vc:vc.replace(/\s/g,''), vcKey:vcKey(vc),
+    mobile, altMobile, company:'', village, created, pack, notes, cost, paid:'', balance
+  };
+  const exists=myData.findIndex(d=>normVC(d.vc)===normVC(vc));
+  if(exists>=0){
+    if(!confirm('VC '+vc+' ఆల్రెడీ ఉంది! Update చేయాలా?'))return;
+    myData[exists]={...myData[exists],...newRec};
+    showToast('✅ Record updated: '+name);
+  } else {
+    myData.push(newRec);
+    showToast('✅ Customer added: '+name);
+  }
+  updateDot(1,true,'Excel: '+myData.length+' records ✓');
+  closeAddCustomer();
+  applyAll();
+}
+
+// ── DOWNLOAD UPLOAD FORMAT ──
+function downloadUploadFormat(){
+  if(!myData.length){showToast('Data లేదు! ముందు Firebase నుండి load చేయండి',true);return;}
+  const headers=['Technician','LC No','New/Winback','Customer Name','VC Number','Mobile Phone Number','Alternative Mobile','New Box Company','Village','Created On','Pack Name','Notes','Cost Amount','Paid','Balance'];
+  const rows=myData.map(d=>[
+    d.tech||'', d.lcno||'', d.type||'', d.name||'', normVC(d.vc||''),
+    d.mobile||'', d.altMobile||'', d.company||'', d.village||'',
+    d.created||'', d.pack||'', d.notes||'', d.cost||'', d.paid||'', d.balance||''
+  ]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  const colWidths=[15,8,10,20,14,16,16,15,14,12,20,20,10,8,8];
+  ws['!cols']=colWidths.map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Customers');
+  const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
+  XLSX.writeFile(wb,'SuryaDTH_Upload_'+today+'.xlsx');
+  showToast('✅ Excel downloaded! ('+myData.length+' records)');
+}
+
 function exportCSV(){
   if(!filtered.length){showToast('Data లేదు!',true);return;}
   const hdrs=['Tech','Type','Name','VC','Status','Renewal','Mobile','Company','Village','Pack','Amount'];
