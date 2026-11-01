@@ -602,6 +602,7 @@ td{padding:7px 9px;white-space:nowrap;}
           <th onclick="srt('status')">Status ↕</th>
           <th onclick="srt('renewal')">Renewal ↕</th>
           <th onclick="srt('mobile')">Mobile ↕</th>
+          <th onclick="srt('altMobile')">Alt Mobile ↕</th>
           <th onclick="srt('company')">Co ↕</th>
           <th onclick="srt('village')">Village ↕</th>
           <th onclick="srt('pack')">Pack ↕</th>
@@ -2939,6 +2940,7 @@ function renderDesktopTable(){
 <td class="${stCls}">${stTxt}</td>
 <td class="${rClass}">${d.renewal||'—'}</td>
 <td class="mob">${d.mobile||'-'}</td>
+<td class="mob">${d.altMobile||'-'}</td>
 <td><span class="${coCls}">${d.company||'-'}</span></td>
 <td style="font-size:12px">${d.village||'-'}</td>
 <td class="pack" title="${d.pack}">${d.pack||'-'}</td>
@@ -2983,6 +2985,7 @@ function renderMobileCards(){
   </div>
   <div class="mc-row">
     <div class="mc-field"><div class="mc-label">Mobile</div><div class="mc-value mob">${d.mobile||'-'}</div></div>
+    <div class="mc-field"><div class="mc-label">Alt Mobile</div><div class="mc-value mob">${d.altMobile||'-'}</div></div>
     <div class="mc-field"><div class="mc-label">Pack</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.pack?d.pack.substring(0,18)+(d.pack.length>18?'…':''):'-'}</div></div>
     <div class="mc-field"><div class="mc-label">Created</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.created||'-'}</div></div>
   </div>
