@@ -2984,7 +2984,7 @@ function renderMobileCards(){
   <div class="mc-row">
     <div class="mc-field"><div class="mc-label">Mobile</div><div class="mc-value mob">${d.mobile||'-'}</div></div>
     <div class="mc-field"><div class="mc-label">Pack</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.pack?d.pack.substring(0,18)+(d.pack.length>18?'…':''):'-'}</div></div>
-    <div class="mc-field"><div class="mc-label">Amount</div><div class="mc-value amt">${d.cost?'₹'+d.cost:'-'}</div></div>
+    <div class="mc-field"><div class="mc-label">Created</div><div class="mc-value" style="font-size:11px;color:var(--muted)">${d.created||'-'}</div></div>
   </div>
   <div class="mc-actions">
     ${mob?`<button class="wa-btn ${waType==='renewal'?'renewal':''}" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 ${waType==='renewal'?'Renewal Reminder':waType==='deactive'?'Deactive Alert':'WhatsApp'}</button>`:''}
