@@ -633,18 +633,6 @@ td{padding:7px 9px;white-space:nowrap;}
 
 <div class="toast" id="toast"></div>
 
-<!-- LOGIN MODAL -->
-<div class="modal-bg" id="loginModal" style="display:flex;align-items:center;justify-content:center;z-index:9999;">
-  <div class="modal" style="max-width:340px;width:100%;text-align:center;">
-    <div style="font-size:28px;margin-bottom:8px;">🔐</div>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:4px;">Surya DTH CRM</h3>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Login చేయండి</div>
-    <input type="password" id="loginPassInp" class="pack-inp" style="text-align:center;font-size:16px;letter-spacing:4px;margin-bottom:12px;" placeholder="Password నమోదు చేయండి" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()" style="background:linear-gradient(135deg,rgba(245,158,11,.3),rgba(245,158,11,.1));color:var(--accent);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:10px 24px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-bottom:8px;">🔑 Login</button>
-    <div id="loginErr" style="font-size:12px;color:#f87171;min-height:16px;"></div>
-  </div>
-</div>
-
 <!-- EDIT CUSTOMER MODAL -->
 <div class="modal-bg" id="editCustModal" style="display:none;align-items:center;justify-content:center;">
   <div class="modal" style="max-width:480px;width:100%;max-height:90vh;overflow-y:auto;">
@@ -2359,15 +2347,15 @@ function printQR(){
 function logoutCRM(){
   if(!confirm('Logout చేస్తారా?'))return;
   crmRole=null;
-  sessionStorage.removeItem('crm_role');
+  localStorage.removeItem('crm_role');
+  localStorage.removeItem('crm_tech_name');
   // Hide edit buttons
-  document.getElementById('editColHeader').style.display='none';
+  const hdr=document.getElementById('editColHeader');
+  if(hdr) hdr.style.display='none';
   document.querySelectorAll('.edit-col').forEach(el=>el.style.display='none');
   document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='none');
-  document.getElementById('roleBadge').textContent='';
-  document.getElementById('loginPassInp').value='';
-  document.getElementById('loginErr').textContent='';
-  document.getElementById('loginModal').style.display='flex';
+  const badge=document.getElementById('roleBadge');
+  if(badge) badge.textContent='';
   showToast('👋 Logout అయ్యారు');
 }
 
@@ -2486,7 +2474,7 @@ function saveCRMPasswords(){
 }
 
 // ══════════════════════════════════════════════════════
-// LOGIN SYSTEM
+// LOGIN SYSTEM (Edit button నొక్కినప్పుడు మాత్రమే)
 // ══════════════════════════════════════════════════════
 let crmRole = null; // 'admin' or 'tech' or null
 
@@ -2494,44 +2482,38 @@ function initLogin(){
   // Default passwords if not set
   if(!localStorage.getItem('crm_admin_pass')) localStorage.setItem('crm_admin_pass','103599');
   if(!localStorage.getItem('crm_tech_pass')) localStorage.setItem('crm_tech_pass','1234');
-  // Check if already logged in this session
-  const sess = sessionStorage.getItem('crm_role');
-  if(sess==='admin'||sess==='tech'){
-    crmRole=sess;
-    document.getElementById('loginModal').style.display='none';
+  // Check localStorage — persistent across browser sessions
+  const saved = localStorage.getItem('crm_role');
+  if(saved==='admin'||saved==='tech'){
+    crmRole=saved;
     applyRoleUI();
-  } else {
-    document.getElementById('loginModal').style.display='flex';
   }
+  // No login modal on open — CRM directly shows
 }
 
-function doLogin(){
-  const inp=document.getElementById('loginPassInp').value;
+function askLoginForEdit(callback){
+  // Already logged in (persistent)
+  if(crmRole){ callback(); return; }
+  const inp=prompt('🔐 Password enter చేయండి:\n(Admin లేదా Tech password)');
+  if(inp===null) return;
   const adminPass=localStorage.getItem('crm_admin_pass')||'103599';
   const techPass=localStorage.getItem('crm_tech_pass')||'1234';
   if(inp===adminPass){
     crmRole='admin';
-    sessionStorage.setItem('crm_role','admin');
-    document.getElementById('loginModal').style.display='none';
-    document.getElementById('loginPassInp').value='';
-    document.getElementById('loginErr').textContent='';
+    localStorage.setItem('crm_role','admin'); // persistent
     applyRoleUI();
     showToast('✅ Admin గా Login అయ్యారు!');
+    callback();
   } else if(inp===techPass){
     crmRole='tech';
-    sessionStorage.setItem('crm_role','tech');
-    document.getElementById('loginModal').style.display='none';
-    document.getElementById('loginPassInp').value='';
-    document.getElementById('loginErr').textContent='';
+    localStorage.setItem('crm_role','tech'); // persistent
+    const techName=prompt('మీ పేరు enter చేయండి:');
+    if(techName&&techName.trim()) localStorage.setItem('crm_tech_name',techName.trim());
     applyRoleUI();
-    // Ask tech name for auto-fill in Add form
-    const techName=prompt('మీ పేరు enter చేయండి (Add form లో auto-fill అవుతుంది):');
-    if(techName&&techName.trim()) sessionStorage.setItem('crm_tech_name',techName.trim());
     showToast('✅ Technician గా Login అయ్యారు!');
+    callback();
   } else {
-    document.getElementById('loginErr').textContent='❌ తప్పు password! మళ్ళీ try చేయండి.';
-    document.getElementById('loginPassInp').value='';
-    document.getElementById('loginPassInp').focus();
+    showToast('❌ తప్పు password!',true);
   }
 }
 
@@ -2543,7 +2525,7 @@ function applyRoleUI(){
   document.querySelectorAll('.edit-col').forEach(el=>el.style.display='');
   // Show mobile edit buttons
   document.querySelectorAll('.mc-edit-btn').forEach(el=>el.style.display='');
-  // Show role badge
+  // Update role badge
   updateRoleBadge();
 }
 
@@ -2552,6 +2534,7 @@ function updateRoleBadge(){
   if(badge){
     if(crmRole==='admin') { badge.textContent='👑 Admin'; badge.style.color='var(--accent)'; }
     else if(crmRole==='tech') { badge.textContent='🔧 Tech'; badge.style.color='var(--green)'; }
+    else { badge.textContent=''; }
   }
 }
 
@@ -2559,7 +2542,9 @@ function updateRoleBadge(){
 // EDIT / DELETE CUSTOMER
 // ══════════════════════════════════════════════════════
 function openEditCustomer(gi){
-  if(!crmRole){showToast('Login చేయండి!',true);return;}
+  askLoginForEdit(()=>_openEditCustomer(gi));
+}
+function _openEditCustomer(gi){
   const d=filtered[gi];
   if(!d){showToast('Record కనుగొనబడలేదు!',true);return;}
   // Find index in myData
@@ -3369,7 +3354,7 @@ function openAddCustomer(){
   document.getElementById('ac_tech_new').value='';
   // Auto-fill tech name if logged in as tech
   if(crmRole==='tech'){
-    const loggedTech=sessionStorage.getItem('crm_tech_name')||'';
+    const loggedTech=localStorage.getItem('crm_tech_name')||'';
     if(loggedTech&&techs.includes(loggedTech)) techSel.value=loggedTech;
     techSel.disabled=true; // tech cannot change their own name
   } else {
