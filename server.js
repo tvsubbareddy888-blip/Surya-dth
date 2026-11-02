@@ -786,6 +786,26 @@ app.post('/packSync', async (req, res) => {
   }
 });
 
+// RENEWAL SYNC — CRM నుండి VPS bot trigger చేయి
+app.post('/renewalSync', async (req, res) => {
+  try {
+    const fetch = require('node-fetch');
+    console.log('[RENEWAL SYNC] CRM triggered — calling VPS...');
+    if(!RECHARGE_BOT_URL) return res.json({ success: false, message: 'RECHARGE_BOT_URL not set' });
+    const botRes = await fetch(`${RECHARGE_BOT_URL}/renewalSync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await botRes.json();
+    console.log('[RENEWAL SYNC] VPS response:', JSON.stringify(data));
+    res.json({ success: true, ...data });
+  } catch(e) {
+    console.log('[RENEWAL SYNC ERROR]', e.message);
+    res.json({ success: false, message: e.message });
+  }
+});
+
 // PACK SYNC SAVE — VPS నుండి Firebase కి save చేయి + cache update
 app.post('/packSync/save', async (req, res) => {
   try {
