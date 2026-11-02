@@ -488,6 +488,7 @@ td{padding:7px 9px;white-space:nowrap;}
   <div class="tab" data-tab="webonly" onclick="setTab('webonly',this)">🌐 Web Only</div>
   <div class="tab" data-tab="autorenew" onclick="setTab('autorenew',this)">🔄 Auto Renew</div>
   <div class="tab" data-tab="pending" onclick="setTab('pending',this)" style="color:#f87171;">⏳ Pending</div>
+  <button id="renewalSyncBtn2" onclick="triggerRenewalSync()" style="padding:7px 12px;border-radius:7px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.15);color:#10b981;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;">🔄 Renewal Dates Sync</button>
 </div>
 
 
@@ -1369,13 +1370,15 @@ function setFBStatus(state, msg, sub){
 
 async function triggerRenewalSync(){
   const btn = document.getElementById('renewalSyncBtn');
+  const btn2 = document.getElementById('renewalSyncBtn2');
   if(btn){btn.disabled=true;btn.textContent='⏳ Starting...';}
-  showToast('Renewal Sync మొదలైంది... 10-15 నిమిషాలు పట్టవచ్చు');
+  if(btn2){btn2.disabled=true;btn2.textContent='⏳ Starting...';}
+  showToast('Renewal Dates Sync మొదలైంది... 10-15 నిమిషాలు పట్టవచ్చు');
   try {
     const res = await fetch('https://surya-dth.onrender.com/renewalSync', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
     const data = await res.json();
     if(data.success){
-      showToast('✅ Renewal Sync Started! VPS లో browser తెరుచుకుంటుంది');
+      showToast('✅ Renewal Dates Sync Started! VPS లో browser తెరుచుకుంటుంది');
     } else {
       showToast('❌ Sync Error: ' + (data.message||'Unknown'), true);
     }
@@ -1384,6 +1387,7 @@ async function triggerRenewalSync(){
   }
   setTimeout(()=>{
     if(btn){btn.disabled=false;btn.textContent='🔄 Renewal Sync';}
+    if(btn2){btn2.disabled=false;btn2.textContent='🔄 Renewal Dates Sync';}
   }, 30000);
 }
 
