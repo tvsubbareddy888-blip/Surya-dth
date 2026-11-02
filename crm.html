@@ -378,10 +378,6 @@ td{padding:7px 9px;white-space:nowrap;}
     <div><div class="logo-text">SURYA DTH</div><div class="logo-sub">LCO CRM v5</div></div>
   </div>
   <div class="hdr-right">
-    <div style="display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:8px;padding:3px;">
-      <button id="btnModeLco" onclick="setCrmMode('lco')" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:4px 10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:all .2s;">📡 LCO</button>
-      <button id="btnModeTrade" onclick="setCrmMode('trade')" style="background:transparent;color:var(--muted);border:none;border-radius:6px;padding:4px 10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:all .2s;">🏪 Trade</button>
-    </div>
     <span id="clockEl"></span>
     <span class="live">● LIVE</span>
   </div>
@@ -730,15 +726,6 @@ td{padding:7px 9px;white-space:nowrap;}
           <input id="ac_altMobile" type="tel" placeholder="Alt Mobile" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         </div>
       </div>
-      <div id="ac_company_row" style="display:none;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Company *</div>
-        <select id="ac_company" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;cursor:pointer;">
-          <option value="DISH TV">📡 DISH TV</option>
-          <option value="TATA PLAY">🎬 TATA PLAY</option>
-          <option value="AIRTEL">📶 AIRTEL</option>
-          <option value="SUN DIRECT">☀️ SUN DIRECT</option>
-        </select>
-      </div>
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Village / Area</div>
         <input id="ac_village" type="text" placeholder="Village పేరు" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
@@ -1062,53 +1049,7 @@ td{padding:7px 9px;white-space:nowrap;}
 // ══════════════════════════════════════════════════════
 // FIREBASE CONFIG
 // ══════════════════════════════════════════════════════
-const FB_URL = 'https://surya-dth-crm-default-rtdb.firebaseio.com';
-
-function getFbPath(){
-  return crmMode==='trade' ? '/tradedata.json' : '/crmdata.json';
-}
-
-function setCrmMode(mode){
-  if(crmMode===mode) return;
-  crmMode=mode;
-  localStorage.setItem('crmMode',mode);
-  // Button styles
-  const lcoBtn=document.getElementById('btnModeLco');
-  const tradeBtn=document.getElementById('btnModeTrade');
-  if(lcoBtn&&tradeBtn){
-    if(mode==='lco'){
-      lcoBtn.style.background='var(--accent)'; lcoBtn.style.color='#000';
-      tradeBtn.style.background='transparent'; tradeBtn.style.color='var(--muted)';
-    } else {
-      tradeBtn.style.background='#10b981'; tradeBtn.style.color='#000';
-      lcoBtn.style.background='transparent'; lcoBtn.style.color='var(--muted)';
-    }
-  }
-  // Logo sub text
-  const logoSub=document.querySelector('.logo-sub');
-  if(logoSub) logoSub.textContent=mode==='trade'?'TRADE CRM v1':'LCO CRM v5';
-  // Current mode data backup చేయి
-  if(mode==='trade'){
-    lcoData=[...myData]; // LCO data backup
-    myData=tradeData.length?tradeData:[];
-  } else {
-    tradeData=[...myData]; // Trade data backup
-    myData=lcoData.length?lcoData:[];
-  }
-  curTabFilter='all';
-  curPage=1;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  const allTab=document.querySelector('.tab[data-tab="all"]');
-  if(allTab) allTab.classList.add('active');
-  // Trade mode కి switch అయినప్పుడు Firebase నుండి trade data pull చేయి
-  if(mode==='trade' && tradeData.length===0){
-    showToast('🏪 Trade Mode — Firebase నుండి data తీసుకుంటున్నాం...');
-    pullFromFirebase();
-  } else {
-    applyAll();
-    showToast(mode==='trade'?'🏪 Trade Mode':'📡 LCO Mode');
-  }
-}
+const FB_URL = 'https://surya-dth-deta-crm-default-rtdb.firebaseio.com';
 
 // Firestore via Render proxy
 const AR_API = 'https://surya-dth.onrender.com';
@@ -1318,10 +1259,7 @@ function openAutoRenewPanel(){
 // ══════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════
-let crmMode = localStorage.getItem('crmMode')||'lco'; // 'lco' or 'trade'
 let myData=[], dishWeb={}, d2hWeb={}, merged=[], filtered=[];
-let lcoData=[]; // LCO mode backup
-let tradeData=[]; // Trade mode data
 let sortCol='', sortAsc=true, curPage=1, pageSize=50;
 let curTabFilter='all';
 let rFilter=null; // 'today','tomorrow','yesterday','YYYY-MM-DD'
@@ -1440,7 +1378,7 @@ async function pushToFirebase(){
       updatedAt: new Date().toISOString(),
       updatedBy: 'admin'
     };
-    const res=await fetch(FB_URL+getFbPath(),{
+    const res=await fetch(FB_URL+'/crmdata.json',{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
@@ -1463,21 +1401,16 @@ async function pullFromFirebase(){
   setFBStatus('syncing','Firebase నుండి data తీసుకుంటున్నాం...','');
   showLdr();
   try{
-    const res=await fetch(FB_URL+getFbPath());
+    const res=await fetch(FB_URL+'/crmdata.json');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     if(!data||!data.myData||!data.myData.length){
       hideLdr();
-      const msg=crmMode==='trade'?'🏪 Trade data లేదు — Excel upload చేసి Push చేయండి':'Firebase లో data లేదు — Excel upload చేసి Push చేయండి';
-      setFBStatus('disconnected',msg,'');
-      showToast(msg,false);
-      applyAll();
-      return;
+      setFBStatus('disconnected','Firebase లో data లేదు','Excel upload చేసి Push చేయండి');
+      showToast('Firebase లో data లేదు',true);
       return;
     }
     myData=data.myData||[];
-    if(crmMode==='lco') lcoData=[...myData];
-    else tradeData=[...myData];
     dishWeb=data.dishWeb||{};
     d2hWeb=data.d2hWeb||{};
     hideLdr();
@@ -1517,12 +1450,11 @@ async function pullFromFirebase(){
 async function autoConnect(){
   setFBStatus('syncing','Firebase కి connect అవుతున్నాం...','surya-dth-deta-crm');
   try{
-    const res=await fetch(FB_URL+getFbPath());
+    const res=await fetch(FB_URL+'/crmdata.json');
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     if(data&&data.myData&&data.myData.length){
       myData=data.myData||[];
-      if(crmMode==='lco') lcoData=[...myData]; else tradeData=[...myData];
       dishWeb=data.dishWeb||{};
       d2hWeb=data.d2hWeb||{};
       fbConnected=true;
@@ -2534,15 +2466,6 @@ let crmRole = null; // 'admin' or 'tech'
 function initLogin(){
   if(!localStorage.getItem('crm_admin_pass')) localStorage.setItem('crm_admin_pass','103599');
   if(!localStorage.getItem('crm_tech_pass')) localStorage.setItem('crm_tech_pass','1234');
-  // Mode buttons initial state
-  const lcoBtn=document.getElementById('btnModeLco');
-  const tradeBtn=document.getElementById('btnModeTrade');
-  const logoSub=document.querySelector('.logo-sub');
-  if(crmMode==='trade'){
-    if(lcoBtn){lcoBtn.style.background='transparent';lcoBtn.style.color='var(--muted)';}
-    if(tradeBtn){tradeBtn.style.background='#10b981';tradeBtn.style.color='#000';}
-    if(logoSub) logoSub.textContent='TRADE CRM v1';
-  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -3375,8 +3298,6 @@ function openAddCustomer(){
   packSel.innerHTML='<option value="">-- Pack select చేయండి --</option>';
   packs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;packSel.appendChild(o);});
   document.getElementById('ac_error').style.display='none';
-  // Trade mode లో company row show చేయి
-  document.getElementById('ac_company_row').style.display=crmMode==='trade'?'block':'none';
   document.getElementById('addCustModal').style.display='flex';
 }
 function acTechChange(sel){
@@ -3404,12 +3325,9 @@ function saveAddCustomer(){
   if(!name){errEl.textContent='Customer పేరు అవసరం!';errEl.style.display='block';return;}
   if(!vc){errEl.textContent='VC Number అవసరం!';errEl.style.display='block';return;}
   errEl.style.display='none';
-  const company = crmMode==='trade'
-    ? (document.getElementById('ac_company').value||'DISH TV')
-    : 'DISH TV';
   const newRec={
     tech, lcno:'', type:'new', name, vc:vc.replace(/\s/g,''), vcKey:vcKey(vc),
-    mobile, altMobile, company, village, created, pack, notes, cost, paid:'', balance,
+    mobile, altMobile, company:'DISH TV', village, created, pack, notes, cost, paid:'', balance,
     status:'pending', synced:false
   };
   const exists=myData.findIndex(d=>normVC(d.vc)===normVC(vc));
