@@ -1517,11 +1517,12 @@ async function pullFromFirebase(){
 async function autoConnect(){
   setFBStatus('syncing','Firebase కి connect అవుతున్నాం...','surya-dth-deta-crm');
   try{
-    const res=await fetch(FB_URL+'/crmdata.json');
+    const res=await fetch(FB_URL+getFbPath());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     if(data&&data.myData&&data.myData.length){
       myData=data.myData||[];
+      if(crmMode==='lco') lcoData=[...myData]; else tradeData=[...myData];
       dishWeb=data.dishWeb||{};
       d2hWeb=data.d2hWeb||{};
       fbConnected=true;
