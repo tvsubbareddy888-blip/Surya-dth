@@ -1468,8 +1468,11 @@ async function pullFromFirebase(){
     const data=await res.json();
     if(!data||!data.myData||!data.myData.length){
       hideLdr();
-      setFBStatus('disconnected','Firebase లో data లేదు','Excel upload చేసి Push చేయండి');
-      showToast('Firebase లో data లేదు',true);
+      const msg=crmMode==='trade'?'🏪 Trade data లేదు — Excel upload చేసి Push చేయండి':'Firebase లో data లేదు — Excel upload చేసి Push చేయండి';
+      setFBStatus('disconnected',msg,'');
+      showToast(msg,false);
+      applyAll();
+      return;
       return;
     }
     myData=data.myData||[];
