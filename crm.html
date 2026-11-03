@@ -3379,15 +3379,16 @@ function saveAddCustomer(){
 // ── DOWNLOAD UPLOAD FORMAT ──
 function downloadUploadFormat(){
   if(!myData.length){showToast('Data లేదు! ముందు Firebase నుండి load చేయండి',true);return;}
-  const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2'];
+  const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2','RENEWAL DATE'];
   const rows=myData.map(d=>[
     d.tech||'', d.lcno||'', d.type||'', d.name||'', normVC(d.vc||''),
     d.mobile||'', d.company||'', d.village||'', d.altMobile||'',
-    d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', ''
+    d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', '',
+    d.renewal||''
   ]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  const colWidths=[15,8,10,20,14,16,15,14,16,12,14,20,20,12,10,10,8,8,10];
+  const colWidths=[15,8,10,20,14,16,15,14,16,12,14,20,20,12,10,10,8,8,10,14];
   ws['!cols']=colWidths.map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Customers');
   const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
