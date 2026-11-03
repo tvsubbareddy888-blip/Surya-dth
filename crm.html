@@ -395,7 +395,6 @@ td{padding:7px 9px;white-space:nowrap;}
   <div class="fb-actions" id="fbActions" style="display:none">
     <button class="fbbtn fbbtn-push" onclick="pushToFirebase()">☁ Push</button>
     <button class="fbbtn fbbtn-pull" onclick="pullFromFirebase()">⬇ Pull</button>
-    <button class="fbbtn" id="renewalSyncBtn" onclick="triggerRenewalSync()" style="background:rgba(16,185,129,.2);color:#10b981;border:1px solid rgba(16,185,129,.3);">🔄 Renewal Sync</button>
   </div>
 </div>
 
@@ -488,7 +487,6 @@ td{padding:7px 9px;white-space:nowrap;}
   <div class="tab" data-tab="webonly" onclick="setTab('webonly',this)">🌐 Web Only</div>
   <div class="tab" data-tab="autorenew" onclick="setTab('autorenew',this)">🔄 Auto Renew</div>
   <div class="tab" data-tab="pending" onclick="setTab('pending',this)" style="color:#f87171;">⏳ Pending</div>
-  <button id="renewalSyncBtn2" onclick="triggerRenewalSync()" style="padding:7px 12px;border-radius:7px;border:1px solid rgba(16,185,129,.4);background:rgba(16,185,129,.15);color:#10b981;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;">🔄 Renewal Dates Sync</button>
 </div>
 
 
@@ -1366,29 +1364,6 @@ function setFBStatus(state, msg, sub){
   lbl.className='fb-lbl '+(state==='connected'?'ok':state==='syncing'?'wait':'err');
   lbl.textContent=msg;
   if(sub) subEl.textContent=sub;
-}
-
-async function triggerRenewalSync(){
-  const btn = document.getElementById('renewalSyncBtn');
-  const btn2 = document.getElementById('renewalSyncBtn2');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Starting...';}
-  if(btn2){btn2.disabled=true;btn2.textContent='⏳ Starting...';}
-  showToast('Renewal Dates Sync మొదలైంది... 10-15 నిమిషాలు పట్టవచ్చు');
-  try {
-    const res = await fetch('https://surya-dth.onrender.com/renewalSync', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
-    const data = await res.json();
-    if(data.success){
-      showToast('✅ Renewal Dates Sync Started! VPS లో browser తెరుచుకుంటుంది');
-    } else {
-      showToast('❌ Sync Error: ' + (data.message||'Unknown'), true);
-    }
-  } catch(e) {
-    showToast('❌ Server connect కాలేదు: ' + e.message, true);
-  }
-  setTimeout(()=>{
-    if(btn){btn.disabled=false;btn.textContent='🔄 Renewal Sync';}
-    if(btn2){btn2.disabled=false;btn2.textContent='🔄 Renewal Dates Sync';}
-  }, 30000);
 }
 
 async function pushToFirebase(){
@@ -3379,15 +3354,16 @@ function saveAddCustomer(){
 // ── DOWNLOAD UPLOAD FORMAT ──
 function downloadUploadFormat(){
   if(!myData.length){showToast('Data లేదు! ముందు Firebase నుండి load చేయండి',true);return;}
-  const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2'];
+  const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2','RENEWAL DATE'];
   const rows=myData.map(d=>[
     d.tech||'', d.lcno||'', d.type||'', d.name||'', normVC(d.vc||''),
     d.mobile||'', d.company||'', d.village||'', d.altMobile||'',
-    d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', ''
+    d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', '',
+    d.renewal||''
   ]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  const colWidths=[15,8,10,20,14,16,15,14,16,12,14,20,20,12,10,10,8,8,10];
+  const colWidths=[15,8,10,20,14,16,15,14,16,12,14,20,20,12,10,10,8,8,10,14];
   ws['!cols']=colWidths.map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws,'Customers');
   const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
