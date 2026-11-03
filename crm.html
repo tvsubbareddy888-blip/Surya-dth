@@ -3379,8 +3379,9 @@ function saveAddCustomer(){
 // ── DOWNLOAD UPLOAD FORMAT ──
 function downloadUploadFormat(){
   if(!myData.length){showToast('Data లేదు! ముందు Firebase నుండి load చేయండి',true);return;}
+  const dlData = filtered.length ? filtered : myData;
   const headers=['TECHNICIAN NAME','LC NO','new/winback','CUSTOMER  Name','VC/ ID','Mobile Phone Number','NEW BOX COMPANY','VILLAGE','ALTERNATIVE MOBILE','Created on','Next Follow-up Date','PACK','Notes','COST AMOUNT','tech amount','remaing amount','PAID','BALANCE','REMARK 2','RENEWAL DATE'];
-  const rows=myData.map(d=>[
+  const rows=dlData.map(d=>[
     d.tech||'', d.lcno||'', d.type||'', d.name||'', normVC(d.vc||''),
     d.mobile||'', d.company||'', d.village||'', d.altMobile||'',
     d.created||'', '', d.pack||'', d.notes||'', d.cost||'', '', '', d.paid||'', d.balance||'', '',
@@ -3393,7 +3394,7 @@ function downloadUploadFormat(){
   XLSX.utils.book_append_sheet(wb,ws,'Customers');
   const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
   XLSX.writeFile(wb,'SuryaDTH_Upload_'+today+'.xlsx');
-  showToast('✅ Excel downloaded! ('+myData.length+' records)');
+  showToast('✅ Excel downloaded! ('+dlData.length+' records)');
 }
 
 function exportCSV(){
