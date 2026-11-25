@@ -2797,7 +2797,8 @@ function mergeSync(){
     const renewalRaw = fbRenewalStr || (web?web.renewalRaw:'');
     const fbSystemPack = (() => {
       // packDetails Map check
-      if(window._packDetails && window._packDetails[normVC(d.vc)]) return window._packDetails[normVC(d.vc)];
+      const pd = window._packDetails && window._packDetails[normVC(d.vc)];
+      if(pd) return typeof pd==='object' ? pd.systemPack||'' : pd;
       return '';
     })();
     return{...d,
@@ -2817,8 +2818,8 @@ function mergeSync(){
       renewal:renewal,
       renewalRaw:renewalRaw,
       systemPack:fbSystemPack||d.systemPack||'',
-      packPrice:d.packPrice||'',
-      packPriceGST:d.packPriceGST||'',
+      packPrice:(()=>{const pd=window._packDetails&&window._packDetails[normVC(d.vc)];return (pd&&typeof pd==='object'?pd.packPrice:'')||d.packPrice||'';})(),
+      packPriceGST:(()=>{const pd=window._packDetails&&window._packDetails[normVC(d.vc)];return (pd&&typeof pd==='object'?pd.packPriceGST:'')||d.packPriceGST||'';})(),
       synced:!!web,
       webSource:web?web.source:''
     };
