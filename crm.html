@@ -2817,6 +2817,8 @@ function mergeSync(){
       renewal:renewal,
       renewalRaw:renewalRaw,
       systemPack:fbSystemPack||d.systemPack||'',
+      packPrice:d.packPrice||'',
+      packPriceGST:d.packPriceGST||'',
       synced:!!web,
       webSource:web?web.source:''
     };
@@ -3219,7 +3221,7 @@ function renderDesktopTable(){
 <td><span class="${coCls}">${d.company||'-'}</span></td>
 <td style="font-size:12px">${d.village||'-'}</td>
 <td class="pack" title="${d.pack}">${d.pack||'-'}</td>
-<td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}</td>
+<td class="pack" title="${d.systemPack||''}" style="color:var(--green);font-size:11px;">${d.systemPack||'-'}${d.packPriceGST?` <span style="color:var(--accent);font-size:10px;">₹${d.packPriceGST}</span>`:''}</td>
 <td class="amt">${d.cost?'₹'+d.cost:'-'}</td>
 <td style="display:flex;gap:4px;">${mob?`<button class="twa" onclick="showWAModal(filtered[${gi}],'${waType}')">📲 WA</button>`:''}<button class="twa" style="background:rgba(59,130,246,.1);color:#60a5fa;border-color:rgba(59,130,246,.25);font-size:10px;" onclick="openCustPctModal(filtered[${gi}])">%</button><button class="twa" style="background:rgba(245,158,11,.1);color:var(--accent);border-color:rgba(245,158,11,.25);" onclick="openQRModal(filtered[${gi}])">QR</button></td>
 <td><button onclick="openEditCustomer(${gi})" style="background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.3);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button></td>
@@ -3500,7 +3502,11 @@ async function loadPackDetails(){
         if(!vc)return;
         window._packDetails[vc] = p.systemPack||'';
         const idx=merged.findIndex(d=>normVC(d.vc)===vc);
-        if(idx>=0) merged[idx].systemPack=p.systemPack||'';
+        if(idx>=0){
+          merged[idx].systemPack=p.systemPack||'';
+          merged[idx].packPrice=p.packPrice||'';
+          merged[idx].packPriceGST=p.packPriceGST||'';
+        }
       });
       // localStorage లో save చేయి
       try{ localStorage.setItem('surya_packs', JSON.stringify(window._packDetails)); }catch(e){}
