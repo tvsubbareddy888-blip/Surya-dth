@@ -816,12 +816,12 @@ app.post('/packSync/save', async (req, res) => {
     
     // Cache update చేయి
     (packs||[]).forEach(p => {
-      if(p.vc) packCache[p.vc] = p.systemPack || '';
+      if(p.vc) packCache[p.vc] = { systemPack: p.systemPack || '', packPrice: p.packPrice || '', packPriceGST: p.packPriceGST || '' };
     });
     packCacheTime = Date.now();
     saveFileCache(PACK_CACHE_FILE, packCache);
     console.log(`[PACK SYNC SAVE] Cache updated: ${Object.keys(packCache).length} packs`);
-    
+
     for (const pack of (packs||[])) {
       const vc = pack.vc || '';
       if (!vc) continue;
@@ -830,6 +830,8 @@ app.post('/packSync/save', async (req, res) => {
         fields: {
           vc: { stringValue: vc },
           systemPack: { stringValue: pack.systemPack || '' },
+          packPrice: { stringValue: pack.packPrice || '' },
+          packPriceGST: { stringValue: pack.packPriceGST || '' },
           operator: { stringValue: pack.operator || '' },
           updatedAt: { stringValue: new Date().toISOString() }
         }
@@ -860,9 +862,10 @@ app.get('/packDetails', async (req, res) => {
     
     // Cache valid అయితే return చేయి
     if(Object.keys(packCache).length > 0) {
-      const packs = Object.entries(packCache).map(([vc, systemPack]) => ({
-        vc, systemPack, operator: '', updatedAt: ''
-      }));
+      const packs = Object.entries(packCache).map(([vc, val]) => {
+        const v = typeof val === 'object' ? val : { systemPack: val, packPrice: '', packPriceGST: '' };
+        return { vc, systemPack: v.systemPack||'', packPrice: v.packPrice||'', packPriceGST: v.packPriceGST||'', operator: '', updatedAt: '' };
+      });
       console.log(`[PACK DETAILS] Serving from cache: ${packs.length} packs`);
       return res.json({ success: true, packs });
     }
@@ -873,13 +876,15 @@ app.get('/packDetails', async (req, res) => {
         const fileData = JSON.parse(fs.readFileSync(PACK_CACHE_FILE, 'utf8'));
         if(fileData && Object.keys(fileData).length > 0) {
           // ERROR packs filter చేయి
-          Object.entries(fileData).forEach(([vc, systemPack]) => {
-            if(systemPack && systemPack !== 'ERROR') packCache[vc] = systemPack;
+          Object.entries(fileData).forEach(([vc, val]) => {
+            const v = typeof val === 'object' ? val : { systemPack: val, packPrice: '', packPriceGST: '' };
+            if(v.systemPack && v.systemPack !== 'ERROR') packCache[vc] = v;
           });
           if(Object.keys(packCache).length > 0) {
-            const packs = Object.entries(packCache).map(([vc, systemPack]) => ({
-              vc, systemPack, operator: '', updatedAt: ''
-            }));
+            const packs = Object.entries(packCache).map(([vc, val]) => {
+              const v = typeof val === 'object' ? val : { systemPack: val, packPrice: '', packPriceGST: '' };
+              return { vc, systemPack: v.systemPack||'', packPrice: v.packPrice||'', packPriceGST: v.packPriceGST||'', operator: '', updatedAt: '' };
+            });
             console.log(`[PACK DETAILS] Loaded ${packs.length} from file cache`);
             return res.json({ success: true, packs });
           }
@@ -888,7 +893,7 @@ app.get('/packDetails', async (req, res) => {
         console.log('[PACK DETAILS] File cache error:', e.message);
       }
     }
-    
+
     // Cache లేదు — Firebase నుండి load చేయి
     const allPacks = [];
     let pageToken = '';
@@ -905,8 +910,10 @@ app.get('/packDetails', async (req, res) => {
         const f = doc.fields || {};
         const vc = f.vc?.stringValue || '';
         const systemPack = f.systemPack?.stringValue || '';
-        allPacks.push({ vc, systemPack, operator: f.operator?.stringValue || '', updatedAt: f.updatedAt?.stringValue || '' });
-        if(vc) packCache[vc] = systemPack;
+        const packPrice = f.packPrice?.stringValue || '';
+        const packPriceGST = f.packPriceGST?.stringValue || '';
+        allPacks.push({ vc, systemPack, packPrice, packPriceGST, operator: f.operator?.stringValue || '', updatedAt: f.updatedAt?.stringValue || '' });
+        if(vc) packCache[vc] = { systemPack, packPrice, packPriceGST };
       });
       pageToken = data.nextPageToken || '';
     } while (pageToken);
