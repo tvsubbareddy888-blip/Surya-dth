@@ -3488,9 +3488,10 @@ async function loadPackDetails(){
         const vc=normVC(d.vc);
         const pd=window._packDetails[vc];
         if(pd){
-          d.systemPack=typeof pd==='object'?pd.systemPack||'':pd;
-          d.packPrice=typeof pd==='object'?pd.packPrice||'':'';
-          d.packPriceGST=typeof pd==='object'?pd.packPriceGST||'':'';
+          const isObj=pd&&typeof pd==='object';
+          d.systemPack=isObj?(pd.systemPack||''):(pd||'');
+          d.packPrice=isObj?(pd.packPrice||''):'';
+          d.packPriceGST=isObj?(pd.packPriceGST||''):'';
         }
       });
       applyAll();
