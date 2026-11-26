@@ -510,7 +510,7 @@ td{padding:7px 9px;white-space:nowrap;}
       <div id="techChkList"></div>
     </div>
   </div>
-  <select id="fPack" onchange="applyAll()" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;cursor:pointer;">
+  <select id="fPack" onchange="applyAll()" onclick="checkPackPIN(event)" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;cursor:pointer;">
     <option value="">📦 System Pack: అన్నీ</option>
   </select>
   <button class="fbtn" onclick="clearAll()" title="అన్ని filters clear చేయి" style="background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.3);font-size:13px;font-weight:800;">🔄 Reset All</button>
@@ -2844,16 +2844,39 @@ function updateStats(){
   if(document.getElementById('sWebOnly'))document.getElementById('sWebOnly').textContent=webOnlyC;
 }
 
+// Pack filter PIN lock — 103599 తో unlock అవుతుంది
+let _packPINUnlocked = false;
+function checkPackPIN(e){
+  if(_packPINUnlocked) return; // already unlocked
+  e.preventDefault();
+  const pin = prompt('🔒 System Pack filter lock.\nPIN నమోదు చేయండి:');
+  if(pin === '103599'){
+    _packPINUnlocked = true;
+  } else {
+    alert('❌ తప్పు PIN! అనుమతి లేదు.');
+    document.getElementById('fPack').value = '';
+  }
+}
+
 function populatePackFilter(){
   const sel = document.getElementById('fPack');
   if(!sel) return;
   const curVal = sel.value;
+  // Pack name → price map (packPriceGST prefer చేస్తుంది)
+  const packPriceMap = {};
+  merged.forEach(d => {
+    if(d.systemPack && !packPriceMap[d.systemPack]){
+      const price = d.packPriceGST || d.packPrice || '';
+      packPriceMap[d.systemPack] = price;
+    }
+  });
   const packs = [...new Set(merged.map(d=>d.systemPack).filter(p=>p))].sort();
   sel.innerHTML = '<option value="">📦 System Pack: అన్నీ</option>';
   packs.forEach(p => {
     const opt = document.createElement('option');
-    opt.value = p;
-    opt.textContent = p;
+    opt.value = p; // filter value = pack name only
+    const price = packPriceMap[p];
+    opt.textContent = price ? `${p} - ₹${price}` : p;
     sel.appendChild(opt);
   });
   if(curVal) sel.value = curVal;
