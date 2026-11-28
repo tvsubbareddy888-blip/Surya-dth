@@ -2862,21 +2862,27 @@ function populatePackFilter(){
   const sel = document.getElementById('fPack');
   if(!sel) return;
   const curVal = sel.value;
-  // Pack name → price map (packPriceGST prefer చేస్తుంది)
-  const packPriceMap = {};
+  // Pack name + price combinations collect చేయి
+  // Key = "PackName||price" (price లేకపోతే "PackName||")
+  const combos = new Set();
   merged.forEach(d => {
-    if(d.systemPack && !packPriceMap[d.systemPack]){
-      const price = d.packPriceGST || d.packPrice || '';
-      packPriceMap[d.systemPack] = price;
-    }
+    if(!d.systemPack) return;
+    const price = d.packPriceGST || d.packPrice || '';
+    combos.add(d.systemPack + '||' + price);
   });
-  const packs = [...new Set(merged.map(d=>d.systemPack).filter(p=>p))].sort();
+  // Sort: pack name alphabetically, then price numerically
+  const sorted = [...combos].sort((a, b) => {
+    const [an, ap] = a.split('||');
+    const [bn, bp] = b.split('||');
+    if(an !== bn) return an.localeCompare(bn);
+    return parseFloat(ap||0) - parseFloat(bp||0);
+  });
   sel.innerHTML = '<option value="">📦 System Pack: అన్నీ</option>';
-  packs.forEach(p => {
+  sorted.forEach(combo => {
+    const [packName, price] = combo.split('||');
     const opt = document.createElement('option');
-    opt.value = p; // filter value = pack name only
-    const price = packPriceMap[p];
-    opt.textContent = price ? `${p} - ₹${price}` : p;
+    opt.value = combo; // "PackName||price" — filter కి use అవుతుంది
+    opt.textContent = price ? `${packName} - ₹${price}` : packName;
     sel.appendChild(opt);
   });
   if(curVal) sel.value = curVal;
@@ -3060,9 +3066,14 @@ function applyAll(){
     // Multi-tech filter
     if(selectedTechs.size>0&&!selectedTechs.has(d.tech))return false;
     if(isTechView&&techViewName&&!d.tech.toUpperCase().includes(techViewName.toUpperCase())&&!techViewName.toUpperCase().includes(d.tech.toUpperCase()))return false;
-    // System Pack filter
+    // System Pack filter — value = "PackName||price" format
     const packFilter = document.getElementById('fPack')?.value||'';
-    if(packFilter && (d.systemPack||'') !== packFilter) return false;
+    if(packFilter){
+      const [filterPack, filterPrice] = packFilter.split('||');
+      const dPrice = d.packPriceGST || d.packPrice || '';
+      if((d.systemPack||'') !== filterPack) return false;
+      if(filterPrice !== dPrice) return false;
+    }
     if(srch){const hay=[d.name,d.vc,d.mobile,d.village,d.tech,d.pack,d.webName,d.altMobile].join(' ').toLowerCase();if(!hay.includes(srch))return false;}
     // Renewal date filter
     if(rFilter){
